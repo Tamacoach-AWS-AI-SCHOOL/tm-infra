@@ -74,13 +74,6 @@ docs/          : 규칙/출력/운영 문서
 - Env       = shared | dev | prod
 - Owner     = 팀명
 - ManagedBy = Terraform
-- Repo      = infra / front / backend / worker
-
-### Optional Tags
-
-- CostCenter
-- Service (front/api/worker 등)
-- DataClassification (public/internal/confidential)
 
 ---
 
