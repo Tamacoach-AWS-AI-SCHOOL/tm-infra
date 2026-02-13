@@ -74,7 +74,7 @@ docs/          : 규칙/출력/운영 문서
 - Env       = shared | dev | prod
 - Owner     = 팀명
 - ManagedBy = Terraform
-- Repo      = infra-repo
+- Repo      = infra / front / backend / worker
 
 ### Optional Tags
 
