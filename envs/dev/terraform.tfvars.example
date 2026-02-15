@@ -3,9 +3,9 @@ env        = "dev"
 owner      = "platform-team"
 aws_region = "ap-northeast-2"
 enable_irsa = false
-enable_access_entries = false
-enable_rbac           = false
-enable_jump_host      = false
+enable_access_entries = true
+enable_rbac           = true
+enable_jump_host      = true
 
 kubernetes_version = "1.30"
 system_nodegroup_instance_types = ["t3.medium"]
