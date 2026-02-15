@@ -162,6 +162,9 @@ resource "helm_release" "karpenter" {
         create = false
         name   = "karpenter"
       }
+      # Keep top-level keys for chart compatibility.
+      nodeSelector = local.system_node_selector
+      tolerations  = local.system_tolerations
       controller = {
         nodeSelector = local.system_node_selector
         tolerations  = local.system_tolerations
