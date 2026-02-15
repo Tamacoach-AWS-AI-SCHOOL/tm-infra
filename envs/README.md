@@ -143,3 +143,22 @@ aws eks update-kubeconfig --name eks-prod --region ap-northeast-2
 - `ssm:TerminateSession`
 - `ssm:DescribeSessions`
 - `ssm:DescribeInstanceInformation`
+
+## Dev Add-ons (Terraform + Helm)
+
+`envs/dev/addons.tf`는 아래 컴포넌트를 Helm으로 설치/관리한다.
+
+- `metrics-server` (`kube-system`)
+- `aws-load-balancer-controller` (`platform`, IRSA SA 재사용)
+- `aws-ebs-csi-driver` (`kube-system`) + `gp3` default StorageClass
+- `karpenter` (`platform`, IRSA SA 재사용)
+
+스케줄링 정책:
+
+- 모든 add-on 파드는 `nodeSelector: { nodepool: system }`
+- 모든 add-on 파드는 `tolerations: dedicated=system:NoSchedule`
+
+IRSA 의존성:
+
+- LBC/Karpenter chart는 `serviceAccount.create=false`로 설정되어 Terraform이 만든 SA를 그대로 사용한다.
+- 따라서 `enable_irsa=true` 상태에서 add-ons apply를 수행해야 한다.
