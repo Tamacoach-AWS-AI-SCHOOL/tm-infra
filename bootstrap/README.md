@@ -133,11 +133,21 @@ terraform apply
 
 ---
 
-# 📤 외부에 노출되는 Outputs
+# 📤 Outputs / Parameter Store 공유 값
 
-본 저장소는 CI/CD 및 다른 레포에서 사용하는 인프라 정보를 output으로 제공한다.
+이 저장소는 다른 레포(CI/CD, manifest-repo 등)가 참조해야 하는 인프라 식별자/엔드포인트를 `terraform output`으로 정의한다.
 
-예시:
+- Output 자체는 인터넷에 공개되지 않으며,
+  **Terraform state에 접근 가능한 주체(사람/CI)** 에게만 노출된다.
+- 다른 레포에서의 사용 편의를 위해,
+  필요한 값은 **SSM Parameter Store 경로 규칙**에 따라 저장한다.
+
+## 저장 방식
+
+- **Terraform이 `aws_ssm_parameter`로 자동 저장**
+  - `terraform apply` 시점에 output 값을 SSM에 함께 기록
+
+## 예시 outputs
 
 - front_bucket_name
 - cloudfront_distribution_id
@@ -147,7 +157,11 @@ terraform apply
 - nlb_arn
 - nlb_target_group_arn
 
-이 값들은 SSM Parameter Store에 저장하여 사용한다.
+## SSM 경로 규칙
+
+- shared(network only): `/${project}/shared/network/...`
+- dev/prod(runtime): `/${project}/${env}/app/...`, `/${project}/${env}/sqs/...`, `/${project}/${env}/obs/...`
+- secrets prefix: `${project}/${env}/...` (선행 `/` 없이)
 
 ---
 
