@@ -1,0 +1,30 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowAssumeFromBootcampAdminUser",
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "arn:aws:iam::193629269600:user/tamacoach_sm"
+        },
+        "Action": "sts:AssumeRole"
+      },
+      {
+        "Sid": "AllowAssumeFromGitLabOIDC",
+        "Effect": "Allow",
+        "Principal": {
+          "Federated": "<OIDC_PROVIDER_ARN>"
+        },
+        "Action": "sts:AssumeRoleWithWebIdentity",
+        "Condition": {
+          "StringEquals": {
+            "<GITLAB_ISS>:aud": "sts.amazonaws.com"
+          },
+          "StringLike": {
+            "<GITLAB_ISS>:sub": "<SUB_CONDITION>"
+          }
+        }
+      }
+    ]
+  }
+  
