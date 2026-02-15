@@ -4,6 +4,9 @@ locals {
   effective_cluster_name      = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
   effective_oidc_provider_arn = var.oidc_provider_arn != "" ? var.oidc_provider_arn : module.eks.oidc_provider_arn
   effective_oidc_provider_url = var.oidc_provider_url != "" ? var.oidc_provider_url : module.eks.oidc_provider_url
+  # Default to Terraform-managed IAM policies, but allow explicit override.
+  lbc_effective_policy_arns       = try(length(var.lbc_policy_arns), 0) > 0 ? var.lbc_policy_arns : [aws_iam_policy.lbc.arn]
+  karpenter_effective_policy_arns = try(length(var.karpenter_policy_arns), 0) > 0 ? var.karpenter_policy_arns : [aws_iam_policy.karpenter_controller.arn]
 
   backend_irsa_inline_policy = jsonencode({
     Version = "2012-10-17"
@@ -86,7 +89,7 @@ locals {
     {
       namespace          = "platform"
       name               = "aws-load-balancer-controller"
-      policy_arns        = var.lbc_policy_arns
+      policy_arns        = local.lbc_effective_policy_arns
       inline_policy_json = null
       create_namespace   = true
       tags               = {}
@@ -94,7 +97,7 @@ locals {
     {
       namespace          = "platform"
       name               = "karpenter"
-      policy_arns        = var.karpenter_policy_arns
+      policy_arns        = local.karpenter_effective_policy_arns
       inline_policy_json = null
       create_namespace   = true
       tags               = {}
@@ -129,6 +132,28 @@ check "irsa_required_inputs_when_enabled" {
   assert {
     condition     = !var.enable_irsa || (local.effective_cluster_name != "" && local.effective_oidc_provider_arn != "" && local.effective_oidc_provider_url != "")
     error_message = "When enable_irsa=true, cluster_name/OIDC values must be set (or available from module.eks outputs)."
+  }
+}
+
+check "irsa_required_policy_arns_when_enabled" {
+  assert {
+    condition     = !var.enable_irsa || length(local.lbc_effective_policy_arns) > 0
+    error_message = "When enable_irsa=true, no effective LBC policy ARN is available."
+  }
+
+  assert {
+    condition     = !var.enable_irsa || length(local.karpenter_effective_policy_arns) > 0
+    error_message = "When enable_irsa=true, no effective Karpenter policy ARN is available."
+  }
+
+  assert {
+    condition     = !var.enable_adot_irsa || (var.enable_irsa && try(length(var.adot_policy_arns), 0) > 0)
+    error_message = "When enable_adot_irsa=true, set enable_irsa=true and provide at least one adot_policy_arns value."
+  }
+
+  assert {
+    condition     = !var.enable_external_secrets_irsa || (var.enable_irsa && try(length(var.external_secrets_policy_arns), 0) > 0)
+    error_message = "When enable_external_secrets_irsa=true, set enable_irsa=true and provide at least one external_secrets_policy_arns value."
   }
 }
 

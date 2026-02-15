@@ -134,14 +134,26 @@ variable "worker_queue_arns" {
 
 variable "lbc_policy_arns" {
   type        = list(string)
-  description = "Managed policy ARNs for aws-load-balancer-controller service account."
+  description = "Optional override policy ARNs for aws-load-balancer-controller SA. Defaults to Terraform-managed aws_iam_policy.lbc."
   default     = []
 }
 
 variable "karpenter_policy_arns" {
   type        = list(string)
-  description = "Managed policy ARNs for karpenter service account."
+  description = "Optional override policy ARNs for karpenter SA. Defaults to Terraform-managed aws_iam_policy.karpenter_controller."
   default     = []
+}
+
+variable "karpenter_node_role_arn" {
+  type        = string
+  description = "Optional node IAM role ARN for Karpenter-provisioned nodes. Defaults to module.eks.nodegroup_role_arn."
+  default     = ""
+}
+
+variable "karpenter_interruption_queue_arn" {
+  type        = string
+  description = "Optional SQS interruption queue ARN used by Karpenter."
+  default     = ""
 }
 
 variable "adot_policy_arns" {

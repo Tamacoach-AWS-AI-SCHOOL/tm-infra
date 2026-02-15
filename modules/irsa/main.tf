@@ -22,9 +22,9 @@ locals {
 
   normalized_role_base = {
     for key, sa in local.serviceaccount_map :
-    key => regexreplace(
+    key => replace(
       "irsa-${var.env}-${var.project}-${sa.namespace}-${sa.name}",
-      "[^a-zA-Z0-9+=,.@_-]",
+      "/[^a-zA-Z0-9+=,.@_-]/",
       "-"
     )
   }
@@ -149,4 +149,3 @@ resource "kubernetes_service_account" "this" {
 
   depends_on = [kubernetes_namespace.this]
 }
-
