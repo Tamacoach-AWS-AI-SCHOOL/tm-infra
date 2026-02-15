@@ -162,3 +162,19 @@ IRSA 의존성:
 
 - LBC/Karpenter chart는 `serviceAccount.create=false`로 설정되어 Terraform이 만든 SA를 그대로 사용한다.
 - 따라서 `enable_irsa=true` 상태에서 add-ons apply를 수행해야 한다.
+
+## Dev Validation Resources (feature flag)
+
+`envs/dev/validation.tf`는 검증 목적 리소스를 선언형으로 제공하며, `enable_validation_resources`로 on/off 한다.
+
+- `kubernetes_persistent_volume_claim_v1.gp3_test` (`default/gp3-test-pvc`, 1Gi, RWO)
+- `kubernetes_namespace_v1.lbc_test` (`lbc-test`)
+- `kubernetes_deployment_v1.web` (nginx)
+- `kubernetes_service_v1.web_lb` (`LoadBalancer`, NLB annotation)
+
+검증 절차:
+
+1. `terraform apply -var-file=terraform.tfvars -var enable_validation_resources=true`
+2. `kubectl get pvc gp3-test-pvc` (Bound 확인)
+3. `kubectl -n lbc-test get svc web` (EXTERNAL-IP/hostname 확인)
+4. 정리: `terraform apply -var-file=terraform.tfvars -var enable_validation_resources=false`
