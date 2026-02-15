@@ -35,6 +35,18 @@ Terraform 기준으로는 아래 로컬 값을 사용한다.
 
 Prefix를 stack/도메인 단위로 고정하면 IRSA 정책에서 `ssm:GetParameter*`, `secretsmanager:GetSecretValue`의 리소스 범위를 prefix 기준으로 잘라 최소권한을 강제할 수 있다.
 
+## IAM Policy 관리 원칙 (LBC / Karpenter)
+
+- `AWS Load Balancer Controller`와 `Karpenter Controller` IAM Policy는 Terraform이 생성한다. 콘솔/CLI 수동 생성은 금지한다.
+- 정책 이름 규칙:
+  - `AWSLoadBalancerControllerIAMPolicy-${project}-${env}`
+  - `KarpenterControllerPolicy-${project}-${env}`
+- `modules/irsa`는 정책을 생성하지 않고, 생성된 policy ARN을 ServiceAccount용 IAM Role에 attach만 수행한다.
+- 따라서 dev/prod `terraform apply` 시 정책 생성 -> IRSA Role 생성/attach -> ServiceAccount `eks.amazonaws.com/role-arn` annotation 연결이 한 흐름으로 처리된다.
+- Karpenter Controller policy의 `iam:PassRole` 대상은 Karpenter가 실제로 생성할 노드 IAM Role이어야 한다.
+  기본값은 `module.eks.nodegroup_role_arn`이며, app node role을 분리하는 경우 `karpenter_node_role_arn` 변수로 override한다.
+- Karpenter interruption queue를 사용하는 경우 `karpenter_interruption_queue_arn`을 지정하면 SQS 권한이 함께 추가된다.
+
 ## IRSA Apply 전제조건 (enable_irsa=true)
 
 IRSA 모듈이 `kubernetes_namespace` / `kubernetes_service_account`를 생성하려면 AWS provider뿐 아니라 `kubernetes`/`helm` provider가 실제 EKS API에 연결되어 있어야 한다.

@@ -29,8 +29,12 @@ jump_host_kubectl_version       = "1.30.0"
 
 # backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-domain-purpose"]
 # worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-domain-purpose"]
-# lbc_policy_arns    = ["arn:aws:iam::123456789012:policy/AWSLoadBalancerControllerIAMPolicy"]
-# karpenter_policy_arns = ["arn:aws:iam::123456789012:policy/KarpenterControllerPolicy-tamacoach-dev"]
+# lbc_policy_arns / karpenter_policy_arns are optional overrides.
+# By default, Terraform creates and uses:
+# - AWSLoadBalancerControllerIAMPolicy-${project}-${env}
+# - KarpenterControllerPolicy-${project}-${env}
+# karpenter_node_role_arn = "arn:aws:iam::123456789012:role/karpenter-node-role-dev"
+# karpenter_interruption_queue_arn = "arn:aws:sqs:ap-northeast-2:123456789012:karpenter-interruption-dev"
 # enable_adot_irsa = false
 # adot_policy_arns = []
 # enable_external_secrets_irsa = false
