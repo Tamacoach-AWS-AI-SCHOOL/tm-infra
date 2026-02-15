@@ -1,0 +1,14 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "AllowAssumeFromBootcampAdminUser",
+        "Effect": "Allow",
+        "Principal": {
+          "AWS": "arn:aws:iam::193629269600:user/tamacoach_sm"
+        },
+        "Action": "sts:AssumeRole"
+      }
+    ]
+  }
+  

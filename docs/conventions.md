@@ -110,3 +110,11 @@ docs/          : 규칙/출력/운영 문서
 - terraform fmt를 항상 통과해야 한다.
 - Terraform 및 provider 버전은 반드시 핀한다.
 - .terraform.lock.hcl은 커밋하여 재현성을 확보한다.
+
+---
+
+## 8) Step F Rules (Naming / Tags / Secrets)
+
+- Naming rule: `${project}-${env}-${component}`
+- Tag rule: `Project`, `Env`, `Owner`, `ManagedBy`만 사용하고 AWS provider `default_tags`로 적용한다.
+- Secrets rule: `tfvars`에 비밀값을 저장하지 않는다. 필요 시 SSM SecureString 또는 Secrets Manager를 사용한다.

@@ -13,3 +13,13 @@ variable "aws_region" {
   description = "AWS region"
   default     = "ap-northeast-2"
 }
+
+variable "tfstate_bucket" {
+  type        = string
+  description = "Remote state S3 bucket name (created by bootstrap)"
+}
+
+variable "tflock_table" {
+  type        = string
+  description = "Remote state DynamoDB lock table name (created by bootstrap)"
+}

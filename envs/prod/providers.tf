@@ -4,7 +4,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project   = var.project
-      Env       = "shared"
+      Env       = "prod"
       Owner     = var.owner
       ManagedBy = "Terraform"
     }

@@ -1,0 +1,3 @@
+project    = "tm"
+owner      = "platform-team"
+aws_region = "ap-northeast-2"
