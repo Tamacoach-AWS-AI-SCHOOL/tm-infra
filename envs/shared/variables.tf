@@ -3,6 +3,17 @@ variable "project" {
   description = "Project identifier (e.g., tamacochi)"
 }
 
+variable "env" {
+  type        = string
+  description = "Stack environment name for shared stack"
+  default     = "shared"
+
+  validation {
+    condition     = var.env == "shared"
+    error_message = "envs/shared stack must use env = \"shared\"."
+  }
+}
+
 variable "owner" {
   type        = string
   description = "Team or owner identifier"
