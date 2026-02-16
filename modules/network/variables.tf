@@ -46,6 +46,26 @@ variable "private_subnet_ids" {
   }
 }
 
+variable "prod_private_subnet_cidrs" {
+  type        = list(string)
+  description = "CIDR blocks for new prod private subnets (2, non-overlapping with existing subnets)"
+
+  validation {
+    condition     = length(var.prod_private_subnet_cidrs) == 2
+    error_message = "prod_private_subnet_cidrs must contain exactly 2 CIDR blocks."
+  }
+}
+
+variable "prod_private_subnet_azs" {
+  type        = list(string)
+  description = "Availability zones for prod private subnets (2)"
+
+  validation {
+    condition     = length(var.prod_private_subnet_azs) == 2
+    error_message = "prod_private_subnet_azs must contain exactly 2 availability zones."
+  }
+}
+
 variable "private_route_table_ids" {
   type        = list(string)
   description = "Existing private route table IDs (1~2)"
