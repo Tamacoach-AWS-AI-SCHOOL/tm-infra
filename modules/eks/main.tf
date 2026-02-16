@@ -72,6 +72,10 @@ resource "aws_eks_cluster" "this" {
   version  = var.kubernetes_version
   enabled_cluster_log_types = var.control_plane_log_types
 
+  access_config {
+    authentication_mode = var.authentication_mode
+  }
+
   vpc_config {
     endpoint_private_access = true
     endpoint_public_access  = false
