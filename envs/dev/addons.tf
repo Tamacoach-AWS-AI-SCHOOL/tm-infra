@@ -108,6 +108,8 @@ resource "helm_release" "aws_ebs_csi_driver" {
       }
     })
   ]
+
+  depends_on = [module.irsa]
 }
 
 resource "kubernetes_storage_class_v1" "gp3_default" {
