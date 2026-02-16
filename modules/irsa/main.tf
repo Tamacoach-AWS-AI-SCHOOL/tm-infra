@@ -41,8 +41,8 @@ locals {
 
   attachment_map = merge([
     for key, sa in local.serviceaccount_map : {
-      for policy_arn in sa.policy_arns :
-      "${key}|${policy_arn}" => {
+      for idx, policy_arn in sa.policy_arns :
+      "${key}|${idx}" => {
         key        = key
         policy_arn = policy_arn
       }
