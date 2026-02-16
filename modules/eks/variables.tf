@@ -73,9 +73,14 @@ variable "addon_versions" {
   default     = {}
 }
 
+variable "control_plane_log_types" {
+  type        = list(string)
+  description = "EKS control plane log types to enable."
+  default     = ["api", "audit", "authenticator"]
+}
+
 variable "tags" {
   type        = map(string)
   description = "Additional tags applied to module resources."
   default     = {}
 }
-

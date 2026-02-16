@@ -32,6 +32,7 @@ module "eks" {
   nodegroup_min_size         = var.system_nodegroup_min_size
   nodegroup_max_size         = var.system_nodegroup_max_size
   nodegroup_desired_size     = var.system_nodegroup_desired_size
+  control_plane_log_types    = var.control_plane_log_types
   addon_versions             = var.addon_versions
   tags                       = local.common_tags
 }
@@ -53,4 +54,3 @@ check "ssm_parameter_prefix_policy" {
     error_message = "envs/dev must not write to shared network SSM prefix."
   }
 }
-

@@ -71,6 +71,12 @@ variable "addon_versions" {
   default     = {}
 }
 
+variable "control_plane_log_types" {
+  type        = list(string)
+  description = "EKS control plane log types enabled in P3 baseline."
+  default     = ["api", "audit", "authenticator"]
+}
+
 variable "ssm_parameter_names" {
   type        = list(string)
   description = "SSM parameter names created by this stack for prefix policy enforcement."
