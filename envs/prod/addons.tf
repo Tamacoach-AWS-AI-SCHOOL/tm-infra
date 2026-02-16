@@ -98,7 +98,6 @@ resource "helm_release" "aws_ebs_csi_driver" {
         tolerations  = local.addons_system_tolerations
       }
       node = {
-        nodeSelector = local.addons_system_node_selector
         tolerations  = local.addons_system_tolerations
       }
     })
