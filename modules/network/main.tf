@@ -32,7 +32,8 @@ data "aws_instance" "gitlab" {
 }
 
 locals {
-  shared_env = var.stack_env
+  shared_env            = var.stack_env
+  naming_project_prefix = var.resource_naming_project != "" ? var.resource_naming_project : var.project
 
   nat_subnet_map = var.nat_mode == "ha" ? {
     for idx, subnet_id in var.public_subnet_ids : tostring(idx) => subnet_id
@@ -95,7 +96,7 @@ resource "aws_subnet" "db" {
   map_public_ip_on_launch = false
 
   tags = {
-    Name        = "${var.project}-${local.shared_env}-db-subnet-${tonumber(each.key) + 1}"
+    Name        = "${local.naming_project_prefix}-${local.shared_env}-db-subnet-${tonumber(each.key) + 1}"
     Environment = "shared"
   }
 }
@@ -105,7 +106,7 @@ resource "aws_route_table" "db" {
   vpc_id   = var.vpc_id
 
   tags = {
-    Name        = "${var.project}-${local.shared_env}-db-rt-${tonumber(each.key) + 1}"
+    Name        = "${local.naming_project_prefix}-${local.shared_env}-db-rt-${tonumber(each.key) + 1}"
     Environment = "shared"
   }
 }
@@ -156,7 +157,7 @@ resource "aws_vpc_endpoint" "s3_gateway" {
 }
 
 resource "aws_security_group" "vpce" {
-  name        = "${var.project}-${local.shared_env}-vpce-sg"
+  name        = "${local.naming_project_prefix}-${local.shared_env}-vpce-sg"
   description = "Interface endpoint SG"
   vpc_id      = var.vpc_id
 
@@ -208,7 +209,7 @@ data "aws_iam_policy_document" "flow_logs_assume_role" {
 }
 
 resource "aws_iam_role" "flow_logs" {
-  name               = "${var.project}-${local.shared_env}-vpc-flow-logs-role"
+  name               = "${local.naming_project_prefix}-${local.shared_env}-vpc-flow-logs-role"
   assume_role_policy = data.aws_iam_policy_document.flow_logs_assume_role.json
 
   tags = {
@@ -231,13 +232,13 @@ data "aws_iam_policy_document" "flow_logs_to_cw" {
 }
 
 resource "aws_iam_role_policy" "flow_logs_to_cw" {
-  name   = "${var.project}-${local.shared_env}-vpc-flow-logs-policy"
+  name   = "${local.naming_project_prefix}-${local.shared_env}-vpc-flow-logs-policy"
   role   = aws_iam_role.flow_logs.id
   policy = data.aws_iam_policy_document.flow_logs_to_cw.json
 }
 
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
-  name              = "/aws/vpc/flow-logs/${var.project}-${local.shared_env}"
+  name              = "/aws/vpc/flow-logs/${local.naming_project_prefix}-${local.shared_env}"
   retention_in_days = var.flow_logs_retention_days
 
   tags = {
@@ -258,7 +259,7 @@ resource "aws_flow_log" "vpc" {
 }
 
 resource "aws_security_group" "nlb_dev" {
-  name        = "${var.project}-dev-nlb-sg"
+  name        = "${local.naming_project_prefix}-dev-nlb-sg"
   description = "NLB SG for dev"
   vpc_id      = var.vpc_id
 
@@ -268,7 +269,7 @@ resource "aws_security_group" "nlb_dev" {
 }
 
 resource "aws_security_group" "nlb_prod" {
-  name        = "${var.project}-prod-nlb-sg"
+  name        = "${local.naming_project_prefix}-prod-nlb-sg"
   description = "NLB SG for prod"
   vpc_id      = var.vpc_id
 
@@ -278,7 +279,7 @@ resource "aws_security_group" "nlb_prod" {
 }
 
 resource "aws_security_group" "eks_nodes_dev" {
-  name        = "${var.project}-dev-eks-nodes-sg"
+  name        = "${local.naming_project_prefix}-dev-eks-nodes-sg"
   description = "EKS nodes SG for dev"
   vpc_id      = var.vpc_id
 
@@ -289,7 +290,7 @@ resource "aws_security_group" "eks_nodes_dev" {
 }
 
 resource "aws_security_group" "eks_nodes_prod" {
-  name        = "${var.project}-prod-eks-nodes-sg"
+  name        = "${local.naming_project_prefix}-prod-eks-nodes-sg"
   description = "EKS nodes SG for prod"
   vpc_id      = var.vpc_id
 
@@ -309,7 +310,7 @@ resource "aws_ec2_tag" "karpenter_discovery_private_subnets_shared" {
 }
 
 resource "aws_security_group" "rds_dev" {
-  name        = "${var.project}-dev-rds-sg"
+  name        = "${local.naming_project_prefix}-dev-rds-sg"
   description = "RDS SG for dev"
   vpc_id      = var.vpc_id
 
@@ -319,7 +320,7 @@ resource "aws_security_group" "rds_dev" {
 }
 
 resource "aws_security_group" "rds_prod" {
-  name        = "${var.project}-prod-rds-sg"
+  name        = "${local.naming_project_prefix}-prod-rds-sg"
   description = "RDS SG for prod"
   vpc_id      = var.vpc_id
 

@@ -1,9 +1,10 @@
 module "network" {
   source = "../../modules/network"
 
-  project   = var.project
-  owner     = var.owner
-  stack_env = "shared"
+  project                 = var.project
+  resource_naming_project = var.resource_naming_project
+  owner                   = var.owner
+  stack_env               = "shared"
 
   vpc_id                  = var.vpc_id
   public_subnet_ids       = var.public_subnet_ids
@@ -94,8 +95,8 @@ check "shared_ssm_prefix_policy" {
         aws_ssm_parameter.network_db_route_table_ids.name,
         aws_ssm_parameter.network_sg_ids.name,
       ] : !startswith(name, "/${var.project}/shared/app/") &&
-        !startswith(name, "/${var.project}/shared/sqs/") &&
-        !startswith(name, "/${var.project}/shared/obs/")
+      !startswith(name, "/${var.project}/shared/sqs/") &&
+      !startswith(name, "/${var.project}/shared/obs/")
     ])
     error_message = "envs/shared must not create app/sqs/obs SSM keys."
   }
