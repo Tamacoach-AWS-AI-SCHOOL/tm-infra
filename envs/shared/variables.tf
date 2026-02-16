@@ -3,6 +3,12 @@ variable "project" {
   description = "Project identifier (e.g., tamacochi)"
 }
 
+variable "resource_naming_project" {
+  type        = string
+  description = "Project token used for shared physical resource names to avoid forced replacement during naming migration."
+  default     = "tm"
+}
+
 variable "env" {
   type        = string
   description = "Stack environment name for shared stack"
@@ -38,6 +44,16 @@ variable "public_subnet_ids" {
 variable "private_subnet_ids" {
   type        = list(string)
   description = "Existing private subnet IDs"
+}
+
+variable "prod_private_subnet_cidrs" {
+  type        = list(string)
+  description = "CIDR blocks for new prod private subnets"
+}
+
+variable "prod_private_subnet_azs" {
+  type        = list(string)
+  description = "Availability zones for new prod private subnets"
 }
 
 variable "private_route_table_ids" {
