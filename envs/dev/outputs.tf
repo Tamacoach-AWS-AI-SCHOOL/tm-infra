@@ -112,8 +112,3 @@ output "jump_host_security_group_id" {
   description = "Jump host security group id."
   value       = var.enable_jump_host ? module.jump_host[0].security_group_id : null
 }
-
-output "lbc_test_service_hostname" {
-  description = "Hostname of the validation NLB service in lbc-test namespace."
-  value       = try(kubernetes_service_v1.web_lb[0].status[0].load_balancer[0].ingress[0].hostname, null)
-}
