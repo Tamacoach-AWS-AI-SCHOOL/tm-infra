@@ -22,7 +22,7 @@ data "aws_subnet" "private" {
 }
 
 data "aws_route_table" "private" {
-  for_each = toset(var.private_route_table_ids)
+  for_each       = toset(var.private_route_table_ids)
   route_table_id = each.value
 }
 
@@ -36,7 +36,7 @@ locals {
 
   nat_subnet_map = var.nat_mode == "ha" ? {
     for idx, subnet_id in var.public_subnet_ids : tostring(idx) => subnet_id
-  } : {
+    } : {
     "0" = var.public_subnet_ids[0]
   }
 
@@ -283,7 +283,8 @@ resource "aws_security_group" "eks_nodes_dev" {
   vpc_id      = var.vpc_id
 
   tags = {
-    Environment = "dev"
+    Environment              = "dev"
+    "karpenter.sh/discovery" = "eks-dev"
   }
 }
 
@@ -293,8 +294,18 @@ resource "aws_security_group" "eks_nodes_prod" {
   vpc_id      = var.vpc_id
 
   tags = {
-    Environment = "prod"
+    Environment              = "prod"
+    "karpenter.sh/discovery" = "eks-prod"
   }
+}
+
+# Shared private subnets are reused by dev/prod in current topology.
+# Tag once with "shared" and allow NodeClass selectors to include this fallback.
+resource "aws_ec2_tag" "karpenter_discovery_private_subnets_shared" {
+  for_each    = toset(var.private_subnet_ids)
+  resource_id = each.value
+  key         = "karpenter.sh/discovery"
+  value       = "shared"
 }
 
 resource "aws_security_group" "rds_dev" {

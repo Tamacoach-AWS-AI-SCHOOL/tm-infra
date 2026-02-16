@@ -50,6 +50,8 @@ data "aws_iam_policy_document" "karpenter_controller" {
     actions = [
       "iam:GetInstanceProfile",
       "iam:CreateInstanceProfile",
+      "iam:TagInstanceProfile",
+      "iam:UntagInstanceProfile",
       "iam:AddRoleToInstanceProfile",
       "iam:RemoveRoleFromInstanceProfile",
       "iam:DeleteInstanceProfile",
