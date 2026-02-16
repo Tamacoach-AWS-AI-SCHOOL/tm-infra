@@ -17,6 +17,7 @@ locals {
   addons_ebs_csi_chart_version        = "2.33.0"
   addons_karpenter_chart_version      = "1.0.8"
   addons_argocd_chart_version         = "7.7.16"
+  addons_karpenter_allowed_types      = ["t3.medium", "t3.large", "m5.large", "c6i.large"]
 
   addons_cluster_name            = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
   addons_karpenter_discovery_tag = "eks-${var.env}"
@@ -310,6 +311,11 @@ resource "kubernetes_manifest" "karpenter_node_pool_app" {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
               values   = ["on-demand"]
+            },
+            {
+              key      = "node.kubernetes.io/instance-type"
+              operator = "In"
+              values   = local.addons_karpenter_allowed_types
             }
           ]
         }
