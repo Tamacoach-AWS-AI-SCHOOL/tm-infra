@@ -90,6 +90,12 @@ variable "authentication_mode" {
   }
 }
 
+variable "bootstrap_cluster_creator_admin_permissions" {
+  type        = bool
+  description = "Whether to bootstrap cluster creator admin permissions at cluster creation."
+  default     = true
+}
+
 variable "tags" {
   type        = map(string)
   description = "Additional tags applied to module resources."
