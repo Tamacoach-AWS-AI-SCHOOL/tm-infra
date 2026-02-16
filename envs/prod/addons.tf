@@ -94,6 +94,10 @@ resource "helm_release" "aws_ebs_csi_driver" {
   values = [
     yamlencode({
       controller = {
+        serviceAccount = {
+          create = false
+          name   = "ebs-csi-controller-sa"
+        }
         nodeSelector = local.addons_system_node_selector
         tolerations  = local.addons_system_tolerations
       }
