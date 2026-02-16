@@ -70,6 +70,7 @@ resource "aws_eks_cluster" "this" {
   name     = var.cluster_name
   role_arn = aws_iam_role.cluster.arn
   version  = var.kubernetes_version
+  enabled_cluster_log_types = var.control_plane_log_types
 
   vpc_config {
     endpoint_private_access = true

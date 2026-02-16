@@ -180,7 +180,6 @@ aws eks update-kubeconfig --name eks-prod --region ap-northeast-2
 
 ArgoCD RBAC/CM 주입 위치(Helm values):
 
-- `configs.rbac.enabled=true`
 - `configs.rbac.policy.default=readonly`
 - `configs.rbac.scopes=[groups]`
 - `configs.rbac.policy.csv`:
@@ -193,6 +192,30 @@ ArgoCD RBAC/CM 주입 위치(Helm values):
 
 - `kubectl -n argocd get cm argocd-rbac-cm -o yaml`
 - `kubectl -n argocd get cm argocd-cm -o yaml`
+
+## P3/P9 분리 운영 메모
+
+### P3에서 하는 것 (이번 단계)
+
+- IRSA 기반 전제(OIDC Provider + Terraform-managed ServiceAccount annotation 패턴)를 유지한다.
+- EKS Control Plane Logging을 dev/prod 공통으로 활성화한다.
+  - 기본 ON: `api`, `audit`, `authenticator`
+  - 기본 OFF(필요 시 P9에서 옵션 확장): `controllerManager`, `scheduler`
+- CloudWatch 로그 그룹은 EKS 기본 로그 그룹(`/aws/eks/<cluster>/cluster`)을 전제로 사용한다.
+  - Log Group naming/retention/KMS 세부 표준화는 P9에서 일괄 적용한다.
+
+### P9에서 하는 것 (후속 단계)
+
+- Fluent Bit(노드/컨테이너 로그 수집)
+- ADOT -> AMP(shared) -> AMG(shared) 경로
+- SNS -> Lambda -> Slack 알림, CloudWatch Alarm 세트, Grafana Alerting rules
+- Slack webhook는 SSM SecureString + KMS로 관리
+  - 경로 규칙: `/{project}/{env}/slack/...`
+
+P9를 뒤로 미루는 이유:
+
+- API Gateway/NLB/RDS/SQS/CloudFront 등 알람 타깃은 P4~P6에서 확정되므로 이후에 관측/알림을 붙이는 편이 변경 비용이 작다.
+- 현재 단계는 클러스터 안정화(P3)와 접근/권한/기본 애드온 정합성 확보가 우선이다.
 
 ## ArgoCD AppProject 경계(dev/prod)
 
