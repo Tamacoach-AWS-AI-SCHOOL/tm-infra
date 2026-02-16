@@ -79,6 +79,17 @@ variable "control_plane_log_types" {
   default     = ["api", "audit", "authenticator"]
 }
 
+variable "authentication_mode" {
+  type        = string
+  description = "EKS cluster authentication mode."
+  default     = "API_AND_CONFIG_MAP"
+
+  validation {
+    condition     = contains(["CONFIG_MAP", "API", "API_AND_CONFIG_MAP"], var.authentication_mode)
+    error_message = "authentication_mode must be one of: CONFIG_MAP, API, API_AND_CONFIG_MAP."
+  }
+}
+
 variable "tags" {
   type        = map(string)
   description = "Additional tags applied to module resources."
