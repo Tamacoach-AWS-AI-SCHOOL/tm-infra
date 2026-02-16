@@ -54,7 +54,18 @@ output "public_subnet_ids" {
 }
 
 output "private_subnet_ids" {
-  value = var.private_subnet_ids
+  description = "DEPRECATED: dev private subnet IDs. Use private_subnet_ids_dev/private_subnet_ids_prod."
+  value       = var.private_subnet_ids
+}
+
+output "private_subnet_ids_dev" {
+  description = "Existing dev private subnet IDs"
+  value       = values(data.aws_subnet.private_dev)[*].id
+}
+
+output "private_subnet_ids_prod" {
+  description = "New prod private subnet IDs"
+  value       = values(aws_subnet.private_prod)[*].id
 }
 
 output "s3_gateway_vpce_id" {

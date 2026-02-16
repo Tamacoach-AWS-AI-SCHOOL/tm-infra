@@ -46,6 +46,16 @@ variable "private_subnet_ids" {
   description = "Existing private subnet IDs"
 }
 
+variable "prod_private_subnet_cidrs" {
+  type        = list(string)
+  description = "CIDR blocks for new prod private subnets"
+}
+
+variable "prod_private_subnet_azs" {
+  type        = list(string)
+  description = "Availability zones for new prod private subnets"
+}
+
 variable "private_route_table_ids" {
   type        = list(string)
   description = "Existing private route table IDs"

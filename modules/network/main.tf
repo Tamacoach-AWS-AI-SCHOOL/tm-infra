@@ -21,6 +21,11 @@ data "aws_subnet" "private" {
   id       = each.value
 }
 
+data "aws_subnet" "private_dev" {
+  for_each = toset(var.private_subnet_ids)
+  id       = each.value
+}
+
 data "aws_route_table" "private" {
   for_each       = toset(var.private_route_table_ids)
   route_table_id = each.value
@@ -49,6 +54,13 @@ locals {
     for idx, cidr in var.db_subnet_cidrs : tostring(idx) => {
       cidr = cidr
       az   = var.db_subnet_azs[idx]
+    }
+  }
+
+  private_prod_subnet_map = {
+    for idx, cidr in var.prod_private_subnet_cidrs : tostring(idx) => {
+      cidr = cidr
+      az   = var.prod_private_subnet_azs[idx]
     }
   }
 
@@ -115,6 +127,28 @@ resource "aws_route_table_association" "db" {
   for_each       = local.db_subnet_map
   subnet_id      = aws_subnet.db[each.key].id
   route_table_id = aws_route_table.db[each.key].id
+}
+
+resource "aws_subnet" "private_prod" {
+  for_each = local.private_prod_subnet_map
+
+  vpc_id                  = var.vpc_id
+  cidr_block              = each.value.cidr
+  availability_zone       = each.value.az
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name        = "${local.naming_project_prefix}-shared-private-prod-${each.value.az}"
+    Environment = "shared"
+    Project     = var.project
+  }
+}
+
+resource "aws_route_table_association" "private_prod" {
+  for_each = local.private_prod_subnet_map
+
+  subnet_id      = aws_subnet.private_prod[each.key].id
+  route_table_id = var.private_route_table_ids[tonumber(each.key) % length(var.private_route_table_ids)]
 }
 
 # If a target route table already has 0.0.0.0/0, this resource can conflict.
@@ -186,7 +220,7 @@ resource "aws_vpc_endpoint" "interface" {
   vpc_id              = var.vpc_id
   service_name        = each.value
   vpc_endpoint_type   = "Interface"
-  subnet_ids          = var.private_subnet_ids
+  subnet_ids          = concat(var.private_subnet_ids, values(aws_subnet.private_prod)[*].id)
   security_group_ids  = [aws_security_group.vpce.id]
   private_dns_enabled = true
 
@@ -284,8 +318,7 @@ resource "aws_security_group" "eks_nodes_dev" {
   vpc_id      = var.vpc_id
 
   tags = {
-    Environment              = "dev"
-    "karpenter.sh/discovery" = "eks-dev"
+    Environment = "dev"
   }
 }
 
@@ -295,18 +328,8 @@ resource "aws_security_group" "eks_nodes_prod" {
   vpc_id      = var.vpc_id
 
   tags = {
-    Environment              = "prod"
-    "karpenter.sh/discovery" = "eks-prod"
+    Environment = "prod"
   }
-}
-
-# Shared private subnets are reused by dev/prod in current topology.
-# Tag once with "shared" and allow NodeClass selectors to include this fallback.
-resource "aws_ec2_tag" "karpenter_discovery_private_subnets_shared" {
-  for_each    = toset(var.private_subnet_ids)
-  resource_id = each.value
-  key         = "karpenter.sh/discovery"
-  value       = "shared"
 }
 
 resource "aws_security_group" "rds_dev" {

@@ -6,10 +6,12 @@ module "network" {
   owner                   = var.owner
   stack_env               = "shared"
 
-  vpc_id                  = var.vpc_id
-  public_subnet_ids       = var.public_subnet_ids
-  private_subnet_ids      = var.private_subnet_ids
-  private_route_table_ids = var.private_route_table_ids
+  vpc_id                    = var.vpc_id
+  public_subnet_ids         = var.public_subnet_ids
+  private_subnet_ids        = var.private_subnet_ids
+  prod_private_subnet_cidrs = var.prod_private_subnet_cidrs
+  prod_private_subnet_azs   = var.prod_private_subnet_azs
+  private_route_table_ids   = var.private_route_table_ids
 
   db_subnet_cidrs = var.db_subnet_cidrs
   db_subnet_azs   = var.db_subnet_azs

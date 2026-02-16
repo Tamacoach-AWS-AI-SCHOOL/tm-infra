@@ -7,3 +7,13 @@ output "ssm_network_prefix" {
   description = "SSM network-only prefix for shared stack"
   value       = local.ssm_network_prefix
 }
+
+output "private_subnet_ids_dev" {
+  description = "Dev private subnet IDs in shared VPC"
+  value       = module.network.private_subnet_ids_dev
+}
+
+output "private_subnet_ids_prod" {
+  description = "Prod private subnet IDs in shared VPC"
+  value       = module.network.private_subnet_ids_prod
+}
