@@ -248,6 +248,11 @@ resource "kubernetes_manifest" "karpenter_ec2_node_class_app" {
           tags = {
             "karpenter.sh/discovery" = local.addons_karpenter_discovery_tag
           }
+        },
+        {
+          tags = {
+            "karpenter.sh/discovery" = "shared"
+          }
         }
       ]
       securityGroupSelectorTerms = [

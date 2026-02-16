@@ -185,15 +185,16 @@ aws eks update-kubeconfig --name eks-prod --region ap-northeast-2
 
 ## Karpenter Discovery Tag 정책
 
-NodeClass는 subnet/security group selector에 `karpenter.sh/discovery=eks-${env}` 태그를 사용한다.
+NodeClass는 subnet/security group selector에 `karpenter.sh/discovery` 태그를 사용한다.
 
 - dev: `karpenter.sh/discovery=eks-dev`
 - prod: `karpenter.sh/discovery=eks-prod`
+- shared subnet fallback: `karpenter.sh/discovery=shared`
 
 주의:
 
-- 같은 VPC를 공유하더라도 dev/prod 태그가 섞이면 안 된다.
-- subnet/sg 모두 동일한 env 태그 집합으로 분리해야 한다.
+- security group은 dev/prod를 분리해 각각 `eks-dev`/`eks-prod` 태그를 사용한다.
+- 현재 shared private subnet 재사용 구조에서는 subnet에 `shared` 태그를 공통 부여하고, NodeClass는 `eks-${env}` 또는 `shared`를 허용한다.
 
 확인 명령 예시:
 
