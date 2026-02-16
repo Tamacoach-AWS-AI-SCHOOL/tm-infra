@@ -49,3 +49,14 @@ resource "aws_ssm_parameter" "jump_security_group_id" {
   tags      = local.common_tags
 }
 
+resource "aws_vpc_security_group_ingress_rule" "eks_api_from_jump_host" {
+  count = var.enable_jump_host ? 1 : 0
+
+  description                  = "Allow jump host access to EKS private API endpoint"
+  security_group_id            = module.eks.cluster_security_group_id
+  referenced_security_group_id = module.jump_host[0].security_group_id
+  from_port                    = 443
+  ip_protocol                  = "tcp"
+  to_port                      = 443
+  tags                         = local.common_tags
+}
