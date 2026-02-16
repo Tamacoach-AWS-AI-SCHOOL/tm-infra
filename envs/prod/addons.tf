@@ -188,9 +188,14 @@ resource "helm_release" "argocd" {
   version          = local.addons_argocd_chart_version
   namespace        = var.argocd_namespace
   create_namespace = true
+  timeout          = 900
 
   values = [
     yamlencode({
+      global = {
+        nodeSelector = local.addons_system_node_selector
+        tolerations  = local.addons_system_tolerations
+      }
       controller = {
         nodeSelector = local.addons_system_node_selector
         tolerations  = local.addons_system_tolerations
@@ -215,6 +220,10 @@ resource "helm_release" "argocd" {
         nodeSelector = local.addons_system_node_selector
         tolerations  = local.addons_system_tolerations
       }
+      redisSecretInit = {
+        nodeSelector = local.addons_system_node_selector
+        tolerations  = local.addons_system_tolerations
+      }
     })
   ]
 }
@@ -228,7 +237,12 @@ resource "kubernetes_manifest" "karpenter_ec2_node_class_app" {
     }
     spec = {
       amiFamily = "AL2023"
-      role      = local.addons_karpenter_node_role_name
+      amiSelectorTerms = [
+        {
+          alias = "al2023@latest"
+        }
+      ]
+      role = local.addons_karpenter_node_role_name
       subnetSelectorTerms = [
         {
           tags = {
