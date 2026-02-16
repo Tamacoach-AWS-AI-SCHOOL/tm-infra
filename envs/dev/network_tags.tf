@@ -31,3 +31,11 @@ resource "aws_ec2_tag" "dev_private_subnet_internal_elb" {
   key         = "kubernetes.io/role/internal-elb"
   value       = "1"
 }
+
+resource "aws_ec2_tag" "dev_eks_nodes_sg_karpenter_discovery" {
+  for_each = toset(compact([local.default_cluster_sg_id]))
+
+  resource_id = each.value
+  key         = "karpenter.sh/discovery"
+  value       = local.cluster_name
+}
