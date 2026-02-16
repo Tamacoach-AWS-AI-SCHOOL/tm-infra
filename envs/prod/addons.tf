@@ -18,12 +18,11 @@ locals {
   addons_karpenter_chart_version      = "1.0.8"
   addons_argocd_chart_version         = "7.7.16"
 
-  addons_cluster_name            = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
-  addons_karpenter_discovery_tag = "eks-${var.env}"
-  addons_karpenter_node_role_name = split(
-    "/",
-    var.karpenter_node_role_arn != "" ? var.karpenter_node_role_arn : module.eks.nodegroup_role_arn,
-  )[1]
+  addons_cluster_name              = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
+  addons_karpenter_discovery_tag   = "eks-${var.env}"
+  addons_karpenter_node_role_name  = split("/", var.karpenter_node_role_arn != "" ? var.karpenter_node_role_arn : module.eks.nodegroup_role_arn)[1]
+  addons_karpenter_allowed_types   = ["m5.large", "m5.xlarge", "c6i.large"]
+  addons_karpenter_prod_cpu_limits = "4"
 
   karpenter_settings = merge(
     {
@@ -39,7 +38,7 @@ locals {
 check "addons_require_irsa" {
   assert {
     condition     = var.enable_irsa
-    error_message = "Add-ons in envs/dev/addons.tf require enable_irsa=true so Terraform-managed ServiceAccounts are reused."
+    error_message = "Add-ons in envs/prod/addons.tf require enable_irsa=true so Terraform-managed ServiceAccounts are reused."
   }
 }
 
@@ -127,7 +126,6 @@ resource "kubernetes_storage_class_v1" "gp3_default" {
   depends_on = [helm_release.aws_ebs_csi_driver]
 }
 
-# Disable legacy gp2 default class when present so gp3 is the single default.
 resource "kubernetes_annotations" "gp2_non_default" {
   api_version = "storage.k8s.io/v1"
   kind        = "StorageClass"
@@ -168,7 +166,6 @@ resource "helm_release" "karpenter" {
         create = false
         name   = "karpenter"
       }
-      # Keep top-level keys for chart compatibility.
       nodeSelector = local.addons_system_node_selector
       tolerations  = local.addons_system_tolerations
       controller = {
@@ -282,16 +279,21 @@ resource "kubernetes_manifest" "karpenter_node_pool_app" {
               key      = "karpenter.sh/capacity-type"
               operator = "In"
               values   = ["on-demand"]
+            },
+            {
+              key      = "node.kubernetes.io/instance-type"
+              operator = "In"
+              values   = local.addons_karpenter_allowed_types
             }
           ]
         }
       }
       limits = {
-        cpu = "8"
+        cpu = local.addons_karpenter_prod_cpu_limits
       }
       disruption = {
-        consolidationPolicy = "WhenEmptyOrUnderutilized"
-        consolidateAfter    = "5m"
+        consolidationPolicy = "WhenEmpty"
+        consolidateAfter    = "30m"
       }
     }
   }

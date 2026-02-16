@@ -262,9 +262,3 @@ variable "jump_host_kubectl_version" {
   description = "kubectl version to install on jump host."
   default     = "1.30.0"
 }
-
-variable "enable_validation_resources" {
-  type        = bool
-  description = "Enable dev validation resources (PVC + LBC NLB test workload)."
-  default     = false
-}

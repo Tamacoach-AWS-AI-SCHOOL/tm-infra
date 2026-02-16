@@ -144,37 +144,77 @@ aws eks update-kubeconfig --name eks-prod --region ap-northeast-2
 - `ssm:DescribeSessions`
 - `ssm:DescribeInstanceInformation`
 
-## Dev Add-ons (Terraform + Helm)
+## EKS System NodeGroup 표준
 
-`envs/dev/addons.tf`는 아래 컴포넌트를 Helm으로 설치/관리한다.
+`modules/eks/main.tf`의 `aws_eks_node_group.system`은 dev/prod 공통으로 항상 생성되며 아래 정책을 강제한다.
 
-- `metrics-server` (`kube-system`)
-- `aws-load-balancer-controller` (`platform`, IRSA SA 재사용)
-- `aws-ebs-csi-driver` (`kube-system`) + `gp3` default StorageClass
-- `karpenter` (`platform`, IRSA SA 재사용)
+- label: `nodepool=system`
+- taint: `dedicated=system:NoSchedule`
+- 목적: 클러스터 필수 컨트롤러 전용 노드풀
 
-스케줄링 정책:
+검증 명령:
 
-- 모든 add-on 파드는 `nodeSelector: { nodepool: system }`
-- 모든 add-on 파드는 `tolerations: dedicated=system:NoSchedule`
+- `kubectl get nodes --show-labels | grep nodepool=system`
+- `kubectl describe node <node-name> | grep dedicated=system:NoSchedule`
 
-IRSA 의존성:
+## 컨트롤러 System 고정 원칙
 
-- LBC/Karpenter chart는 `serviceAccount.create=false`로 설정되어 Terraform이 만든 SA를 그대로 사용한다.
-- 따라서 `enable_irsa=true` 상태에서 add-ons apply를 수행해야 한다.
+필수 컨트롤러(관측/인그레스/오토스케일링/GitOps)는 앱 워크로드와 격리해 운영 안정성을 확보한다.  
+따라서 컨트롤러 파드는 모두 system 노드만 허용하며 app 워크로드는 Karpenter app 노드풀로 분리한다.
 
-## Dev Validation Resources (feature flag)
+## Add-ons 표준 (dev/prod 공통)
 
-`envs/dev/validation.tf`는 검증 목적 리소스를 선언형으로 제공하며, `enable_validation_resources`로 on/off 한다.
+`envs/dev/addons.tf`, `envs/prod/addons.tf`에서 공통 로컬 값을 사용한다.
 
-- `kubernetes_persistent_volume_claim_v1.gp3_test` (`default/gp3-test-pvc`, 1Gi, RWO)
-- `kubernetes_namespace_v1.lbc_test` (`lbc-test`)
-- `kubernetes_deployment_v1.web` (nginx)
-- `kubernetes_service_v1.web_lb` (`LoadBalancer`, NLB annotation)
+- `local.addons_system_node_selector = { nodepool = "system" }`
+- `local.addons_system_tolerations = [{ key = "dedicated", operator = "Equal", value = "system", effect = "NoSchedule" }]`
 
-검증 절차:
+| Add-on | Namespace | Chart | SA | system 고정 values 경로 |
+| --- | --- | --- | --- | --- |
+| metrics-server | `kube-system` | `metrics-server` | chart 기본 | `nodeSelector`, `tolerations` |
+| aws-load-balancer-controller | `platform` | `aws-load-balancer-controller` | `create=false`, `name=aws-load-balancer-controller` | `nodeSelector`, `tolerations` |
+| karpenter-crd | `platform` | `karpenter-crd` | N/A | CRD chart(스케줄링 없음) |
+| karpenter | `platform` | `karpenter` | `create=false`, `name=karpenter` | `nodeSelector`, `tolerations`, `controller.nodeSelector`, `controller.tolerations` |
+| argocd | `argocd` | `argo-cd` | chart 기본 | `controller/server/repoServer/applicationSet/redis/dex` 각각 `nodeSelector`, `tolerations` |
+| aws-ebs-csi-driver | `kube-system` | `aws-ebs-csi-driver` | chart 기본 | `controller.nodeSelector`, `controller.tolerations`, `node.nodeSelector`, `node.tolerations` |
 
-1. `terraform apply -var-file=terraform.tfvars -var enable_validation_resources=true`
-2. `kubectl get pvc gp3-test-pvc` (Bound 확인)
-3. `kubectl -n lbc-test get svc web` (EXTERNAL-IP/hostname 확인)
-4. 정리: `terraform apply -var-file=terraform.tfvars -var enable_validation_resources=false`
+참고:
+
+- LBC/Karpenter Helm release는 `depends_on = [module.irsa]`로 IRSA ServiceAccount 생성 이후 설치된다.
+- Karpenter는 `depends_on = [module.irsa, helm_release.karpenter_crd]` 순서를 강제한다.
+
+## Karpenter Discovery Tag 정책
+
+NodeClass는 subnet/security group selector에 `karpenter.sh/discovery=eks-${env}` 태그를 사용한다.
+
+- dev: `karpenter.sh/discovery=eks-dev`
+- prod: `karpenter.sh/discovery=eks-prod`
+
+주의:
+
+- 같은 VPC를 공유하더라도 dev/prod 태그가 섞이면 안 된다.
+- subnet/sg 모두 동일한 env 태그 집합으로 분리해야 한다.
+
+확인 명령 예시:
+
+- `aws ec2 describe-subnets --filters Name=tag:karpenter.sh/discovery,Values=eks-dev`
+- `aws ec2 describe-subnets --filters Name=tag:karpenter.sh/discovery,Values=eks-prod`
+- `aws ec2 describe-security-groups --filters Name=tag:karpenter.sh/discovery,Values=eks-dev`
+- `aws ec2 describe-security-groups --filters Name=tag:karpenter.sh/discovery,Values=eks-prod`
+
+## Karpenter NodeClass/NodePool 운영 규칙
+
+`envs/*/addons.tf`는 Terraform `kubernetes_manifest`로 `EC2NodeClass(app)` + `NodePool(app)`를 관리한다.
+
+- 공통:
+  - `EC2NodeClass` `amiFamily=AL2023`
+  - `NodePool` label `nodepool=app`
+  - requirements: `kubernetes.io/arch=amd64`, `karpenter.sh/capacity-type=on-demand`
+  - role 기본값: `module.eks.nodegroup_role_arn` (override: `karpenter_node_role_arn`)
+- dev:
+  - limits: `cpu=8`
+  - disruption: `WhenEmptyOrUnderutilized`, `consolidateAfter=5m`
+- prod:
+  - limits: `cpu=4`
+  - instance-type 제한: `m5.large`, `m5.xlarge`, `c6i.large`
+  - disruption: `WhenEmpty`, `consolidateAfter=30m`
