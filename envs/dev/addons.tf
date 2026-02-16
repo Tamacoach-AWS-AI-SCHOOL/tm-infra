@@ -200,7 +200,6 @@ resource "helm_release" "argocd" {
           "statusbadge.enabled" = "true"
         }
         rbac = {
-          enabled          = true
           "policy.default" = "readonly"
           scopes           = "[groups]"
           "policy.csv" = join("\n", [
