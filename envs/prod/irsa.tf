@@ -102,6 +102,14 @@ locals {
       create_namespace   = true
       tags               = {}
     },
+    {
+      namespace          = "kube-system"
+      name               = "ebs-csi-controller-sa"
+      policy_arns        = ["arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"]
+      inline_policy_json = null
+      create_namespace   = false
+      tags               = {}
+    },
   ]
 
   optional_irsa_serviceaccounts = concat(
