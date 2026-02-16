@@ -178,6 +178,22 @@ aws eks update-kubeconfig --name eks-prod --region ap-northeast-2
 | argocd | `argocd` | `argo-cd` | chart 기본 | `controller/server/repoServer/applicationSet/redis/dex` 각각 `nodeSelector`, `tolerations` |
 | aws-ebs-csi-driver | `kube-system` | `aws-ebs-csi-driver` | chart 기본 | `controller.nodeSelector`, `controller.tolerations`, `node.nodeSelector`, `node.tolerations` |
 
+ArgoCD RBAC/CM 주입 위치(Helm values):
+
+- `configs.rbac.enabled=true`
+- `configs.rbac.policy.default=readonly`
+- `configs.rbac.scopes=[groups]`
+- `configs.rbac.policy.csv`:
+  - `p, role:deployer, applications, get, */*, allow`
+  - `p, role:deployer, applications, sync, */*, allow`
+  - `g, tama:argocd-deployer, role:deployer`
+- `configs.cm.statusbadge.enabled=true`
+
+검증 명령:
+
+- `kubectl -n argocd get cm argocd-rbac-cm -o yaml`
+- `kubectl -n argocd get cm argocd-cm -o yaml`
+
 참고:
 
 - LBC/Karpenter Helm release는 `depends_on = [module.irsa]`로 IRSA ServiceAccount 생성 이후 설치된다.
