@@ -4,6 +4,12 @@ variable "project" {
   default     = "tamacoach"
 }
 
+variable "resource_naming_project" {
+  type        = string
+  description = "Optional project token used only for physical resource names. Defaults to var.project."
+  default     = ""
+}
+
 variable "stack_env" {
   type        = string
   description = "Stack environment tag value (shared/dev/prod)"

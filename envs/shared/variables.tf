@@ -3,6 +3,12 @@ variable "project" {
   description = "Project identifier (e.g., tamacochi)"
 }
 
+variable "resource_naming_project" {
+  type        = string
+  description = "Project token used for shared physical resource names to avoid forced replacement during naming migration."
+  default     = "tm"
+}
+
 variable "env" {
   type        = string
   description = "Stack environment name for shared stack"
