@@ -15,6 +15,16 @@ private_subnet_ids = [
   "subnet-0d4af0728250a20af"
 ]
 
+prod_private_subnet_cidrs = [
+  "10.0.176.0/20",
+  "10.0.192.0/20"
+]
+
+prod_private_subnet_azs = [
+  "ap-northeast-2a",
+  "ap-northeast-2c"
+]
+
 private_route_table_ids = [
   "rtb-07d165de08706253f",
   "rtb-0c9b843575716c372"
