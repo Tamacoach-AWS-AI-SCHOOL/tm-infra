@@ -192,6 +192,21 @@ resource "helm_release" "argocd" {
 
   values = [
     yamlencode({
+      configs = {
+        cm = {
+          "statusbadge.enabled" = "true"
+        }
+        rbac = {
+          enabled          = true
+          "policy.default" = "readonly"
+          scopes           = "[groups]"
+          "policy.csv" = join("\n", [
+            "p, role:deployer, applications, get, */*, allow",
+            "p, role:deployer, applications, sync, */*, allow",
+            "g, tama:argocd-deployer, role:deployer",
+          ])
+        }
+      }
       global = {
         nodeSelector = local.addons_system_node_selector
         tolerations  = local.addons_system_tolerations
