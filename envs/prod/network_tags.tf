@@ -33,7 +33,7 @@ resource "aws_ec2_tag" "prod_private_subnet_internal_elb" {
 }
 
 resource "aws_ec2_tag" "prod_eks_nodes_sg_karpenter_discovery" {
-  for_each = toset(compact([local.default_cluster_sg_id]))
+  for_each = toset(compact([nonsensitive(local.default_cluster_sg_id)]))
 
   resource_id = each.value
   key         = "karpenter.sh/discovery"
