@@ -262,3 +262,21 @@ variable "jump_host_kubectl_version" {
   description = "kubectl version to install on jump host."
   default     = "1.30.0"
 }
+
+variable "shared_state_bucket" {
+  type        = string
+  description = "S3 bucket that stores shared Terraform state."
+  default     = "tm-193629269600-tfstate"
+}
+
+variable "shared_state_key" {
+  type        = string
+  description = "State key for envs/shared Terraform state."
+  default     = "shared/terraform.tfstate"
+}
+
+variable "shared_state_region" {
+  type        = string
+  description = "AWS region of the shared Terraform state bucket."
+  default     = "ap-northeast-2"
+}
