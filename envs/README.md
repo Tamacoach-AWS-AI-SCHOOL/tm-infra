@@ -194,6 +194,19 @@ ArgoCD RBAC/CM 주입 위치(Helm values):
 - `kubectl -n argocd get cm argocd-rbac-cm -o yaml`
 - `kubectl -n argocd get cm argocd-cm -o yaml`
 
+## ArgoCD AppProject 경계(dev/prod)
+
+- `envs/dev/addons.tf`는 `AppProject/dev`를 생성하고, `sourceRepos`와 `destinations(namespace=apps, server=https://kubernetes.default.svc)`를 강제한다.
+- `envs/prod/addons.tf`는 `AppProject/prod`를 동일 구조로 생성한다.
+- `clusterResourceWhitelist=[]`로 cluster-scoped 리소스 배포를 기본 차단한다.
+- `namespaceResourceWhitelist`는 apps namespace에서 필요한 core/apps 리소스만 허용한다.
+- 경로(path) 제한은 AppProject 단독으로 완전하지 않으므로, `Application` 매니페스트를 `env/dev` 또는 `env/prod` 디렉터리에만 두는 배치 정책으로 보완한다.
+
+검증 명령:
+
+- `kubectl -n argocd get appproject dev -o yaml`
+- `kubectl -n argocd get appproject prod -o yaml`
+
 참고:
 
 - LBC/Karpenter Helm release는 `depends_on = [module.irsa]`로 IRSA ServiceAccount 생성 이후 설치된다.

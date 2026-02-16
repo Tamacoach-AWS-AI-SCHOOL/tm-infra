@@ -329,3 +329,76 @@ resource "kubernetes_manifest" "karpenter_node_pool_app" {
     kubernetes_manifest.karpenter_ec2_node_class_app,
   ]
 }
+
+resource "kubernetes_manifest" "argocd_appproject_dev" {
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "AppProject"
+    metadata = {
+      name      = "dev"
+      namespace = var.argocd_namespace
+    }
+    spec = {
+      description = "Dev deployment boundary for ArgoCD applications."
+      sourceRepos = var.argocd_project_source_repos
+      destinations = [
+        {
+          namespace = var.apps_namespace
+          server    = "https://kubernetes.default.svc"
+        }
+      ]
+      clusterResourceWhitelist = []
+      namespaceResourceWhitelist = [
+        {
+          group = ""
+          kind  = "ConfigMap"
+        },
+        {
+          group = ""
+          kind  = "PersistentVolumeClaim"
+        },
+        {
+          group = ""
+          kind  = "Secret"
+        },
+        {
+          group = ""
+          kind  = "Service"
+        },
+        {
+          group = ""
+          kind  = "ServiceAccount"
+        },
+        {
+          group = "apps"
+          kind  = "DaemonSet"
+        },
+        {
+          group = "apps"
+          kind  = "Deployment"
+        },
+        {
+          group = "apps"
+          kind  = "ReplicaSet"
+        },
+        {
+          group = "apps"
+          kind  = "StatefulSet"
+        }
+      ]
+      roles = [
+        {
+          name        = "deployer"
+          description = "Limited deploy role for dev project sync."
+          groups      = ["tama:argocd-deployer"]
+          policies = [
+            "p, proj:dev:deployer, applications, get, dev/*, allow",
+            "p, proj:dev:deployer, applications, sync, dev/*, allow",
+          ]
+        }
+      ]
+    }
+  }
+
+  depends_on = [helm_release.argocd]
+}

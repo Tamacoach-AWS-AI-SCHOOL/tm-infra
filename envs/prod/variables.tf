@@ -227,6 +227,12 @@ variable "argocd_controller_serviceaccount" {
   default     = "argocd-application-controller"
 }
 
+variable "argocd_project_source_repos" {
+  type        = list(string)
+  description = "Allowed Git repositories for ArgoCD AppProject sourceRepos."
+  default     = ["https://github.com/tamacoach/tm-infra.git"]
+}
+
 variable "enable_jump_host" {
   type        = bool
   description = "Enable SSM-based jump host in private subnet."
