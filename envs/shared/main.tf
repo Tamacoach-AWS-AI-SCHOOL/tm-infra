@@ -21,6 +21,45 @@ module "network" {
   db_port      = var.db_port
 }
 
+data "aws_caller_identity" "current" {}
+
+module "gitlab_ci_oidc" {
+  count  = var.enable_gitlab_oidc ? 1 : 0
+  source = "../../modules/iam-gitlab-oidc"
+
+  gitlab_oidc_issuer_url      = var.gitlab_oidc_issuer_url
+  gitlab_oidc_audience        = var.gitlab_oidc_audience
+  gitlab_oidc_thumbprint_list = var.gitlab_oidc_thumbprint_list
+  gitlab_project_path         = var.gitlab_project_path
+
+  state_bucket_name = var.tfstate_bucket
+  state_bucket_arn  = "arn:aws:s3:::${var.tfstate_bucket}"
+  lock_table_arn    = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.tflock_table}"
+  region            = var.aws_region
+  kms_key_arn       = var.gitlab_oidc_kms_key_arn
+
+  role_name_prefix   = var.gitlab_role_name_prefix != "" ? var.gitlab_role_name_prefix : "${var.project}-${var.env}"
+  apply_branch       = var.gitlab_oidc_apply_branch
+  aud_claim_name     = var.gitlab_oidc_aud_claim_name
+  sub_claim_name     = var.gitlab_oidc_sub_claim_name
+  plan_sub_patterns  = var.gitlab_oidc_plan_sub_patterns
+  apply_sub_patterns = var.gitlab_oidc_apply_sub_patterns
+
+  tags = local.common_tags
+}
+
+check "gitlab_oidc_required_inputs" {
+  assert {
+    condition = !var.enable_gitlab_oidc || (
+      var.gitlab_oidc_issuer_url != "" &&
+      var.gitlab_oidc_audience != "" &&
+      length(var.gitlab_oidc_thumbprint_list) > 0 &&
+      var.gitlab_project_path != ""
+    )
+    error_message = "When enable_gitlab_oidc=true, issuer_url/audience/thumbprint_list/project_path must be set."
+  }
+}
+
 resource "aws_ssm_parameter" "network_vpc_id" {
   name      = "${local.ssm_network_prefix}/vpc_id"
   type      = "String"
