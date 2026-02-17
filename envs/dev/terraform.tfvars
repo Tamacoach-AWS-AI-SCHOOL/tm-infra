@@ -14,5 +14,13 @@ access_entries = [
   {
     principal_arn = "arn:aws:iam::193629269600:role/jump-dev-tamacoach-role"
     groups        = ["tama:platform-admin"]
+  },
+  {
+    principal_arn = "arn:aws:iam::193629269600:role/tamacoach-dev-tf-plan-role"
+    groups        = ["tama:platform-admin"]
+  },
+  {
+    principal_arn = "arn:aws:iam::193629269600:role/tamacoach-dev-tf-apply-role"
+    groups        = ["tama:platform-admin"]
   }
 ]

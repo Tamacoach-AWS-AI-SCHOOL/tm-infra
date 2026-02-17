@@ -30,6 +30,14 @@ access_entries = [
   {
     principal_arn = "arn:aws:iam::193629269600:role/tm-infra-terraform-admin"
     groups        = ["tama:platform-admin"]
+  },
+  {
+    principal_arn = "arn:aws:iam::193629269600:role/tamacoach-prod-tf-plan-role"
+    groups        = ["tama:platform-admin"]
+  },
+  {
+    principal_arn = "arn:aws:iam::193629269600:role/tamacoach-prod-tf-apply-role"
+    groups        = ["tama:platform-admin"]
   }
 ]
 
