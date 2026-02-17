@@ -8,14 +8,14 @@ enable_access_entries = true
 enable_rbac           = true
 enable_jump_host      = true
 
-kubernetes_version               = "1.30"
-system_nodegroup_instance_types  = ["t3.medium"]
-system_nodegroup_min_size        = 2
-system_nodegroup_max_size        = 4
-system_nodegroup_desired_size    = 2
-jump_host_instance_type          = "t3.small"
-jump_host_install_helm           = false
-jump_host_kubectl_version        = "1.30.0"
+kubernetes_version              = "1.30"
+system_nodegroup_instance_types = ["t3.medium"]
+system_nodegroup_min_size       = 2
+system_nodegroup_max_size       = 4
+system_nodegroup_desired_size   = 2
+jump_host_instance_type         = "t3.small"
+jump_host_install_helm          = false
+jump_host_kubectl_version       = "1.30.0"
 
 # 필요 시만 설정
 backend_queue_arns = []
