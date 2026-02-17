@@ -67,9 +67,9 @@ locals {
 }
 
 resource "aws_eks_cluster" "this" {
-  name     = var.cluster_name
-  role_arn = aws_iam_role.cluster.arn
-  version  = var.kubernetes_version
+  name                      = var.cluster_name
+  role_arn                  = aws_iam_role.cluster.arn
+  version                   = var.kubernetes_version
   enabled_cluster_log_types = var.control_plane_log_types
 
   access_config {
@@ -147,9 +147,9 @@ resource "aws_eks_addon" "vpc_cni" {
 }
 
 resource "aws_eks_addon" "coredns" {
-  cluster_name                = aws_eks_cluster.this.name
-  addon_name                  = "coredns"
-  addon_version               = try(var.addon_versions.coredns, null)
+  cluster_name  = aws_eks_cluster.this.name
+  addon_name    = "coredns"
+  addon_version = try(var.addon_versions.coredns, null)
   configuration_values = jsonencode({
     nodeSelector = {
       nodepool = "system"
