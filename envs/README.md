@@ -25,11 +25,14 @@ Terraform 기준으로는 아래 로컬 값을 사용한다.
 
 ## 예시 키
 
-- network 1: `/tm/shared/network/vpc_id`
-- network 2: `/tm/shared/network/private_subnet_ids`
-- dev app 1: `/tm/dev/app/backend/db_url`
-- dev app 2: `/tm/dev/app/backend/jwt_public_key`
-- dev sqs 1: `/tm/dev/sqs/worker-task/url`
+- network 1: `/${project}/shared/network/vpc_id`
+- network 2: `/${project}/shared/network/private_subnet_ids`
+- dev app 1: `/${project}/dev/app/backend/db_url`
+- dev app 2: `/${project}/dev/app/backend/jwt_public_key`
+- dev sqs 1: `/${project}/dev/sqs/worker-task/url`
+
+참고:
+- 실제 운영 `project` 값은 스택 설정을 따르며, 레거시 리소스에는 `tm` prefix가 남아있을 수 있다.
 
 ## IRSA 최소권한과의 연결
 
@@ -176,7 +179,7 @@ aws eks update-kubeconfig --name eks-prod --region ap-northeast-2
 | karpenter-crd | `platform` | `karpenter-crd` | N/A | CRD chart(스케줄링 없음) |
 | karpenter | `platform` | `karpenter` | `create=false`, `name=karpenter` | `nodeSelector`, `tolerations`, `controller.nodeSelector`, `controller.tolerations` |
 | argocd | `argocd` | `argo-cd` | chart 기본 | `controller/server/repoServer/applicationSet/redis/dex` 각각 `nodeSelector`, `tolerations` |
-| aws-ebs-csi-driver | `kube-system` | `aws-ebs-csi-driver` | chart 기본 | `controller.nodeSelector`, `controller.tolerations`, `node.nodeSelector`, `node.tolerations` |
+| aws-ebs-csi-driver | `kube-system` | `aws-ebs-csi-driver` | chart 기본 | `controller.nodeSelector`, `controller.tolerations`, `node.tolerations` |
 
 ArgoCD RBAC/CM 주입 위치(Helm values):
 
@@ -241,12 +244,11 @@ NodeClass는 subnet/security group selector에 `karpenter.sh/discovery` 태그�
 
 - dev: `karpenter.sh/discovery=eks-dev`
 - prod: `karpenter.sh/discovery=eks-prod`
-- shared subnet fallback: `karpenter.sh/discovery=shared`
 
 주의:
 
 - security group은 dev/prod를 분리해 각각 `eks-dev`/`eks-prod` 태그를 사용한다.
-- 현재 shared private subnet 재사용 구조에서는 subnet에 `shared` 태그를 공통 부여하고, NodeClass는 `eks-${env}` 또는 `shared`를 허용한다.
+- 현재 NodeClass selector는 `eks-${env}` 단일 태그 기준으로 동작한다.
 
 확인 명령 예시:
 
