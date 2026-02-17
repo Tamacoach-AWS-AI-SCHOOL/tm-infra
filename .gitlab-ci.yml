@@ -6,50 +6,170 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 
-oidc-smoke-sts:
-  stage: test
-  image: amazon/aws-cli:2
+stages:
+  - lint
+  - plan
+  - apply
+
+default:
   tags:
     - terraform
+  variables:
+    TF_IN_AUTOMATION: "true"
+    TF_INPUT: "false"
+    TF_CLI_ARGS: "-no-color"
+    AWS_DEFAULT_REGION: "ap-northeast-2"
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - when: never
+
+.assume_oidc: &assume_oidc
+  - |
+    if [ -z "${AWS_ROLE_ARN:-}" ]; then
+      echo "AWS_ROLE_ARN is required"
+      exit 1
+    fi
+    if [ -z "${GITLAB_OIDC_TOKEN:-}" ]; then
+      echo "GITLAB_OIDC_TOKEN is required"
+      exit 1
+    fi
+
+    CREDS_JSON=$(aws sts assume-role-with-web-identity \
+      --role-arn "${AWS_ROLE_ARN}" \
+      --role-session-name "gitlab-${CI_PROJECT_ID}-${CI_JOB_ID}" \
+      --web-identity-token "${GITLAB_OIDC_TOKEN}" \
+      --duration-seconds 3600)
+
+    export AWS_ACCESS_KEY_ID=$(echo "${CREDS_JSON}" | jq -r '.Credentials.AccessKeyId')
+    export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SecretAccessKey')
+    export AWS_SESSION_TOKEN=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SessionToken')
+    aws sts get-caller-identity
+
+fmt:
+  stage: lint
+  script:
+    - terraform version
+    - terraform fmt -check -recursive
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+validate:
+  stage: lint
+  script:
+    - |
+      for d in envs/shared envs/dev envs/prod; do
+        echo "== validate: $d =="
+        terraform -chdir="$d" init -backend=false
+        terraform -chdir="$d" validate
+      done
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+.plan_template:
+  stage: plan
   id_tokens:
     GITLAB_OIDC_TOKEN:
       aud: https://gitlab.tamacoach.net
-  variables:
-    AWS_REGION: ap-northeast-2
-    AWS_STS_REGIONAL_ENDPOINTS: regional
+  before_script:
+    - *assume_oidc
   script:
-    - |
-      if [ -z "${GITLAB_OIDC_TOKEN:-}" ]; then
-        echo "GITLAB_OIDC_TOKEN is empty"; exit 1
-      fi
+    - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
+    - terraform -chdir="envs/${TF_ENV}" plan -out="tfplan"
+  artifacts:
+    paths:
+      - "envs/${TF_ENV}/tfplan"
+    expire_in: 1 day
 
-      if [ "$CI_COMMIT_BRANCH" = "develop" ]; then
-        ROLE_ARN="$TF_PLAN_ROLE_ARN_DEV"
-      elif [ "$CI_COMMIT_BRANCH" = "main" ]; then
-        ROLE_ARN="$TF_PLAN_ROLE_ARN_PROD"
-      else
-        echo "Skip: branch=$CI_COMMIT_BRANCH"; exit 0
-      fi
+plan:shared:
+  extends: .plan_template
+  variables:
+    TF_ENV: "shared"
+    AWS_ROLE_ARN: "${TF_PLAN_ROLE_ARN_SHARED}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/shared/**/*
 
-      if [ -z "${ROLE_ARN:-}" ]; then
-        echo "ROLE_ARN is empty"; exit 1
-      fi
+plan:dev:
+  extends: .plan_template
+  variables:
+    TF_ENV: "dev"
+    AWS_ROLE_ARN: "${TF_PLAN_ROLE_ARN_DEV}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      changes:
+        - envs/dev/**/*
 
-      read AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<EOF
-      $(aws sts assume-role-with-web-identity \
-        --role-arn "$ROLE_ARN" \
-        --role-session-name "gitlab-oidc-smoke-${CI_PIPELINE_ID}" \
-        --web-identity-token "$GITLAB_OIDC_TOKEN" \
-        --duration-seconds 900 \
-        --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
-        --output text)
-      EOF
+plan:prod:
+  extends: .plan_template
+  variables:
+    TF_ENV: "prod"
+    AWS_ROLE_ARN: "${TF_PLAN_ROLE_ARN_PROD}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/prod/**/*
 
-      export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
-      aws sts get-caller-identity
+.apply_template:
+  stage: apply
   when: manual
   allow_failure: false
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.tamacoach.net
+  before_script:
+    - *assume_oidc
+  script:
+    - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
+    - terraform -chdir="envs/${TF_ENV}" show -no-color tfplan | sed -n '1,200p'
+    - terraform -chdir="envs/${TF_ENV}" apply -auto-approve tfplan
+  rules:
+    - when: never
+
+apply:shared:
+  extends: .apply_template
+  variables:
+    TF_ENV: "shared"
+    AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_SHARED}"
+  needs:
+    - job: plan:shared
+      artifacts: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
       when: manual
     - when: never
+
+apply:dev:
+  extends: .apply_template
+  variables:
+    TF_ENV: "dev"
+    AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_DEV}"
+  needs:
+    - job: apply:shared
+    - job: plan:dev
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      changes:
+        - envs/dev/**/*
+      when: manual
+    - when: never
+
+apply:prod:
+  extends: .apply_template
+  variables:
+    TF_ENV: "prod"
+    AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_PROD}"
+  needs:
+    - job: apply:shared
+    - job: plan:prod
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/prod/**/*
+      when: manual
+    - when: never
+
