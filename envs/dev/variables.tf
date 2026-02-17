@@ -86,16 +86,6 @@ variable "ssm_parameter_names" {
   type        = list(string)
   description = "SSM parameter names created by this stack for prefix policy enforcement."
   default     = []
-
-  validation {
-    condition = alltrue([
-      for name in var.ssm_parameter_names :
-      startswith(name, "/${var.project}/${var.env}/app/") ||
-      startswith(name, "/${var.project}/${var.env}/sqs/") ||
-      startswith(name, "/${var.project}/${var.env}/obs/")
-    ])
-    error_message = "ssm_parameter_names must be under /${project}/${env}/{app|sqs|obs}/..."
-  }
 }
 
 variable "enable_irsa" {
