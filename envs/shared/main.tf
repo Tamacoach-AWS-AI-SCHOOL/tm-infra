@@ -23,10 +23,11 @@ module "network" {
 
 data "aws_caller_identity" "current" {}
 
-module "gitlab_ci_oidc" {
+module "gitlab_ci_oidc_shared" {
   count  = var.enable_gitlab_oidc ? 1 : 0
   source = "../../modules/iam-gitlab-oidc"
 
+  create_oidc_provider        = true
   gitlab_oidc_issuer_url      = var.gitlab_oidc_issuer_url
   gitlab_oidc_audience        = var.gitlab_oidc_audience
   gitlab_oidc_thumbprint_list = var.gitlab_oidc_thumbprint_list
@@ -38,12 +39,77 @@ module "gitlab_ci_oidc" {
   region            = var.aws_region
   kms_key_arn       = var.gitlab_oidc_kms_key_arn
 
-  role_name_prefix   = var.gitlab_role_name_prefix != "" ? var.gitlab_role_name_prefix : "${var.project}-${var.env}"
-  apply_branch       = var.gitlab_oidc_apply_branch
-  aud_claim_name     = var.gitlab_oidc_aud_claim_name
-  sub_claim_name     = var.gitlab_oidc_sub_claim_name
-  plan_sub_patterns  = var.gitlab_oidc_plan_sub_patterns
-  apply_sub_patterns = var.gitlab_oidc_apply_sub_patterns
+  role_name_prefix = var.gitlab_role_name_prefix_shared != "" ? var.gitlab_role_name_prefix_shared : "${var.project}-shared"
+  apply_branch     = "main"
+  aud_claim_name   = var.gitlab_oidc_aud_claim_name
+  sub_claim_name   = var.gitlab_oidc_sub_claim_name
+  allowed_ref_patterns_plan = length(var.gitlab_oidc_plan_sub_patterns_shared) > 0 ? var.gitlab_oidc_plan_sub_patterns_shared : [
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:develop",
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:main",
+  ]
+  # shared apply is intentionally allowed on develop+main.
+  allowed_ref_patterns_apply = length(var.gitlab_oidc_apply_sub_patterns_shared) > 0 ? var.gitlab_oidc_apply_sub_patterns_shared : [
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:develop",
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:main",
+  ]
+
+  tags = local.common_tags
+}
+
+module "gitlab_ci_oidc_dev" {
+  count  = var.enable_gitlab_oidc ? 1 : 0
+  source = "../../modules/iam-gitlab-oidc"
+
+  create_oidc_provider       = false
+  existing_oidc_provider_arn = module.gitlab_ci_oidc_shared[0].oidc_provider_arn
+  gitlab_oidc_audience       = var.gitlab_oidc_audience
+  gitlab_project_path        = var.gitlab_project_path
+
+  state_bucket_name = var.tfstate_bucket
+  state_bucket_arn  = "arn:aws:s3:::${var.tfstate_bucket}"
+  lock_table_arn    = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.tflock_table}"
+  region            = var.aws_region
+  kms_key_arn       = var.gitlab_oidc_kms_key_arn
+
+  role_name_prefix = var.gitlab_role_name_prefix_dev != "" ? var.gitlab_role_name_prefix_dev : "${var.project}-dev"
+  apply_branch     = "develop"
+  aud_claim_name   = var.gitlab_oidc_aud_claim_name
+  sub_claim_name   = var.gitlab_oidc_sub_claim_name
+  allowed_ref_patterns_plan = length(var.gitlab_oidc_plan_sub_patterns_dev) > 0 ? var.gitlab_oidc_plan_sub_patterns_dev : [
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:develop",
+  ]
+  allowed_ref_patterns_apply = length(var.gitlab_oidc_apply_sub_patterns_dev) > 0 ? var.gitlab_oidc_apply_sub_patterns_dev : [
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:develop",
+  ]
+
+  tags = local.common_tags
+}
+
+module "gitlab_ci_oidc_prod" {
+  count  = var.enable_gitlab_oidc ? 1 : 0
+  source = "../../modules/iam-gitlab-oidc"
+
+  create_oidc_provider       = false
+  existing_oidc_provider_arn = module.gitlab_ci_oidc_shared[0].oidc_provider_arn
+  gitlab_oidc_audience       = var.gitlab_oidc_audience
+  gitlab_project_path        = var.gitlab_project_path
+
+  state_bucket_name = var.tfstate_bucket
+  state_bucket_arn  = "arn:aws:s3:::${var.tfstate_bucket}"
+  lock_table_arn    = "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.tflock_table}"
+  region            = var.aws_region
+  kms_key_arn       = var.gitlab_oidc_kms_key_arn
+
+  role_name_prefix = var.gitlab_role_name_prefix_prod != "" ? var.gitlab_role_name_prefix_prod : "${var.project}-prod"
+  apply_branch     = "main"
+  aud_claim_name   = var.gitlab_oidc_aud_claim_name
+  sub_claim_name   = var.gitlab_oidc_sub_claim_name
+  allowed_ref_patterns_plan = length(var.gitlab_oidc_plan_sub_patterns_prod) > 0 ? var.gitlab_oidc_plan_sub_patterns_prod : [
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:main",
+  ]
+  allowed_ref_patterns_apply = length(var.gitlab_oidc_apply_sub_patterns_prod) > 0 ? var.gitlab_oidc_apply_sub_patterns_prod : [
+    "project_path:${var.gitlab_project_path}:ref_type:branch:ref:main",
+  ]
 
   tags = local.common_tags
 }

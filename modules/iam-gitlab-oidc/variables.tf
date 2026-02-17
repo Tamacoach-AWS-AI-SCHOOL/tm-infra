@@ -1,9 +1,22 @@
+variable "create_oidc_provider" {
+  type        = bool
+  description = "Create IAM OIDC provider in this module invocation. Keep true only once per issuer."
+  default     = false
+}
+
+variable "existing_oidc_provider_arn" {
+  type        = string
+  description = "Existing IAM OIDC provider ARN to reuse when create_oidc_provider=false."
+  default     = null
+}
+
 variable "gitlab_oidc_issuer_url" {
   type        = string
   description = "GitLab OIDC issuer URL. Example: https://gitlab.com or https://gitlab.example.com"
+  default     = ""
 
   validation {
-    condition     = can(regex("^https?://", var.gitlab_oidc_issuer_url))
+    condition     = var.gitlab_oidc_issuer_url == "" || can(regex("^https?://", var.gitlab_oidc_issuer_url))
     error_message = "gitlab_oidc_issuer_url must start with http:// or https://."
   }
 }
@@ -16,6 +29,7 @@ variable "gitlab_oidc_audience" {
 variable "gitlab_oidc_thumbprint_list" {
   type        = list(string)
   description = "OIDC thumbprints for IAM OIDC provider."
+  default     = []
 }
 
 variable "gitlab_project_path" {
@@ -72,13 +86,13 @@ variable "apply_branch" {
   default     = "main"
 }
 
-variable "plan_sub_patterns" {
+variable "allowed_ref_patterns_plan" {
   type        = list(string)
   description = "Optional override sub patterns for plan role trust (StringLike)."
   default     = []
 }
 
-variable "apply_sub_patterns" {
+variable "allowed_ref_patterns_apply" {
   type        = list(string)
   description = "Optional override sub patterns for apply role trust (StringLike)."
   default     = []
@@ -89,4 +103,3 @@ variable "tags" {
   description = "Additional tags applied to IAM resources."
   default     = {}
 }
-
