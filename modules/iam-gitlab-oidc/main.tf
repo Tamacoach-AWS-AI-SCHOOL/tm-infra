@@ -1,23 +1,32 @@
+data "aws_caller_identity" "current" {}
+
 locals {
   issuer_hostpath = trimsuffix(
     replace(replace(var.gitlab_oidc_issuer_url, "https://", ""), "http://", ""),
     "/"
   )
 
-  aud_condition_key = "${local.issuer_hostpath}:${var.aud_claim_name}"
-  sub_condition_key = "${local.issuer_hostpath}:${var.sub_claim_name}"
+  existing_issuer_hostpath = var.existing_oidc_provider_arn == null ? "" : trimsuffix(
+    replace(var.existing_oidc_provider_arn, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/", ""),
+    "/"
+  )
+
+  effective_issuer_hostpath = var.create_oidc_provider ? local.issuer_hostpath : local.existing_issuer_hostpath
+  provider_arn              = var.create_oidc_provider ? aws_iam_openid_connect_provider.gitlab[0].arn : var.existing_oidc_provider_arn
+
+  aud_condition_key = "${local.effective_issuer_hostpath}:${var.aud_claim_name}"
+  sub_condition_key = "${local.effective_issuer_hostpath}:${var.sub_claim_name}"
 
   default_plan_sub_patterns = [
     "project_path:${var.gitlab_project_path}:*",
   ]
 
-  # Apply is restricted to the configured branch (main by default).
   default_apply_sub_patterns = [
     "project_path:${var.gitlab_project_path}:ref_type:branch:ref:${var.apply_branch}",
   ]
 
-  effective_plan_sub_patterns  = length(var.plan_sub_patterns) > 0 ? var.plan_sub_patterns : local.default_plan_sub_patterns
-  effective_apply_sub_patterns = length(var.apply_sub_patterns) > 0 ? var.apply_sub_patterns : local.default_apply_sub_patterns
+  effective_plan_sub_patterns  = length(var.allowed_ref_patterns_plan) > 0 ? var.allowed_ref_patterns_plan : local.default_plan_sub_patterns
+  effective_apply_sub_patterns = length(var.allowed_ref_patterns_apply) > 0 ? var.allowed_ref_patterns_apply : local.default_apply_sub_patterns
 
   iam_tags = merge(
     {
@@ -27,7 +36,27 @@ locals {
   )
 }
 
+check "oidc_provider_source" {
+  assert {
+    condition     = var.create_oidc_provider || var.existing_oidc_provider_arn != null
+    error_message = "Set create_oidc_provider=true or provide existing_oidc_provider_arn."
+  }
+}
+
+check "oidc_provider_create_inputs" {
+  assert {
+    condition = !var.create_oidc_provider || (
+      var.gitlab_oidc_issuer_url != "" &&
+      length(var.gitlab_oidc_thumbprint_list) > 0
+    )
+    error_message = "When create_oidc_provider=true, gitlab_oidc_issuer_url and gitlab_oidc_thumbprint_list are required."
+  }
+}
+
+# Keep exactly one OIDC provider per issuer/account. Reuse provider ARN in other env calls.
 resource "aws_iam_openid_connect_provider" "gitlab" {
+  count = var.create_oidc_provider ? 1 : 0
+
   url             = var.gitlab_oidc_issuer_url
   client_id_list  = [var.gitlab_oidc_audience]
   thumbprint_list = var.gitlab_oidc_thumbprint_list
@@ -41,7 +70,7 @@ data "aws_iam_policy_document" "plan_assume_role" {
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.gitlab.arn]
+      identifiers = [local.provider_arn]
     }
 
     condition {
@@ -65,7 +94,7 @@ data "aws_iam_policy_document" "apply_assume_role" {
 
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.gitlab.arn]
+      identifiers = [local.provider_arn]
     }
 
     condition {
@@ -74,7 +103,7 @@ data "aws_iam_policy_document" "apply_assume_role" {
       values   = [var.gitlab_oidc_audience]
     }
 
-    # Main branch only by default. Adjust apply_sub_patterns if needed.
+    # Apply trust is branch-scoped by allowed_ref_patterns_apply.
     condition {
       test     = "StringLike"
       variable = local.sub_condition_key

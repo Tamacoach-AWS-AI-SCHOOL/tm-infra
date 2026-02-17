@@ -139,9 +139,21 @@ variable "gitlab_project_path" {
   default     = ""
 }
 
-variable "gitlab_role_name_prefix" {
+variable "gitlab_role_name_prefix_shared" {
   type        = string
-  description = "Optional role name prefix override. Defaults to project-env naming."
+  description = "Role name prefix for shared plan/apply roles."
+  default     = ""
+}
+
+variable "gitlab_role_name_prefix_dev" {
+  type        = string
+  description = "Role name prefix for dev plan/apply roles."
+  default     = ""
+}
+
+variable "gitlab_role_name_prefix_prod" {
+  type        = string
+  description = "Role name prefix for prod plan/apply roles."
   default     = ""
 }
 
@@ -149,12 +161,6 @@ variable "gitlab_oidc_kms_key_arn" {
   type        = string
   description = "Optional KMS key ARN used for backend state encryption."
   default     = null
-}
-
-variable "gitlab_oidc_apply_branch" {
-  type        = string
-  description = "Apply role allowed branch."
-  default     = "main"
 }
 
 variable "gitlab_oidc_aud_claim_name" {
@@ -169,14 +175,38 @@ variable "gitlab_oidc_sub_claim_name" {
   default     = "sub"
 }
 
-variable "gitlab_oidc_plan_sub_patterns" {
+variable "gitlab_oidc_plan_sub_patterns_shared" {
   type        = list(string)
-  description = "Optional override for plan role sub claim patterns."
+  description = "Optional override for shared plan role sub claim patterns."
   default     = []
 }
 
-variable "gitlab_oidc_apply_sub_patterns" {
+variable "gitlab_oidc_apply_sub_patterns_shared" {
   type        = list(string)
-  description = "Optional override for apply role sub claim patterns."
+  description = "Optional override for shared apply role sub claim patterns."
+  default     = []
+}
+
+variable "gitlab_oidc_plan_sub_patterns_dev" {
+  type        = list(string)
+  description = "Optional override for dev plan role sub claim patterns."
+  default     = []
+}
+
+variable "gitlab_oidc_apply_sub_patterns_dev" {
+  type        = list(string)
+  description = "Optional override for dev apply role sub claim patterns."
+  default     = []
+}
+
+variable "gitlab_oidc_plan_sub_patterns_prod" {
+  type        = list(string)
+  description = "Optional override for prod plan role sub claim patterns."
+  default     = []
+}
+
+variable "gitlab_oidc_apply_sub_patterns_prod" {
+  type        = list(string)
+  description = "Optional override for prod apply role sub claim patterns."
   default     = []
 }

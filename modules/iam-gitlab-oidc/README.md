@@ -1,11 +1,11 @@
 # GitLab OIDC Terraform CI Role Module
 
 `modules/iam-gitlab-oidc`는 GitLab CI에서 AWS 인증을 OIDC(`AssumeRoleWithWebIdentity`)로 수행하기 위한
-OIDC Provider와 Terraform Plan/Apply 역할을 생성한다.
+OIDC Provider(선택 생성)와 Terraform Plan/Apply 역할 1쌍을 생성한다.
 
 ## 생성 리소스
 
-- `aws_iam_openid_connect_provider.gitlab`
+- `aws_iam_openid_connect_provider.gitlab` (선택: `create_oidc_provider=true`일 때만 생성)
 - `aws_iam_role.plan` (`<prefix>-tf-plan-role`)
 - `aws_iam_role.apply` (`<prefix>-tf-apply-role`)
 - `aws_iam_policy.plan` / `aws_iam_policy.apply`
@@ -23,7 +23,7 @@ OIDC Provider와 Terraform Plan/Apply 역할을 생성한다.
   - `project_path:<gitlab_project_path>:ref_type:branch:ref:main`
   - 즉 기본값은 main 브랜치에서만 Assume 가능
 
-`aud_claim_name`, `sub_claim_name`, `plan_sub_patterns`, `apply_sub_patterns` 변수로
+`aud_claim_name`, `sub_claim_name`, `allowed_ref_patterns_plan`, `allowed_ref_patterns_apply` 변수로
 GitLab.com / Self-Managed claim 매핑 차이를 흡수할 수 있다.
 
 ## 권한 정책 분리
@@ -86,4 +86,3 @@ module "gitlab_ci_oidc" {
 - IAM Trust에서 이미 main 제한이 걸리므로, develop/feature에서 apply role Assume은 실패해야 정상이다.
 - (선택) shared apply를 더 강하게 제한하려면 `apply_sub_patterns`를 별도 role로 분리하거나,
   GitLab `rules:changes`로 `envs/shared/**` 변경 시에만 apply job을 노출한다.
-
