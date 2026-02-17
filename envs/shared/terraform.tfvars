@@ -47,8 +47,8 @@ tfstate_bucket = "tm-193629269600-tfstate"
 tflock_table   = "tm-tf-lock"
 
 enable_gitlab_oidc          = true
-gitlab_oidc_issuer_url = "https://gitlab.tamacoach.net"
-gitlab_oidc_audience   = "https://gitlab.tamacoach.net"
+gitlab_oidc_issuer_url      = "https://gitlab.tamacoach.net"
+gitlab_oidc_audience        = "https://gitlab.tamacoach.net"
 gitlab_oidc_thumbprint_list = ["df5a1ce8498fb0d92b70e5bb893790a6c3468e04"]
 gitlab_project_path         = "tamacoach/tm-infra"
 
