@@ -5,27 +5,179 @@
 # Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
+
 stages:
-- build
-- test
-- deploy
-- review
-- dast
-- staging
-- canary
-- production
-- incremental rollout 10%
-- incremental rollout 25%
-- incremental rollout 50%
-- incremental rollout 100%
-- performance
-- cleanup
-- secret-detection
-sast:
-  stage: test
-include:
-- template: Auto-DevOps.gitlab-ci.yml
+  - lint
+  - plan
+  - apply
+
 variables:
-  SECRET_DETECTION_ENABLED: 'true'
-secret_detection:
-  stage: secret-detection
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_CLI_ARGS: "-no-color"
+  AWS_DEFAULT_REGION: "ap-northeast-2"
+
+default:
+  tags:
+    - terraform
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+    - when: never
+
+.assume_oidc: &assume_oidc
+  - |
+    if [ -z "${AWS_ROLE_ARN:-}" ]; then
+      echo "AWS_ROLE_ARN is required"
+      exit 1
+    fi
+    if [ -z "${GITLAB_OIDC_TOKEN:-}" ]; then
+      echo "GITLAB_OIDC_TOKEN is required"
+      exit 1
+    fi
+    echo "${GITLAB_OIDC_TOKEN}" | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '"oidc iss=\(.iss) aud=\(.aud) sub=\(.sub)"'
+
+    CREDS_JSON=$(aws sts assume-role-with-web-identity \
+      --role-arn "${AWS_ROLE_ARN}" \
+      --role-session-name "gitlab-${CI_PROJECT_ID}-${CI_JOB_ID}" \
+      --web-identity-token "${GITLAB_OIDC_TOKEN}" \
+      --duration-seconds 3600)
+
+    export AWS_ACCESS_KEY_ID=$(echo "${CREDS_JSON}" | jq -r '.Credentials.AccessKeyId')
+    export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SecretAccessKey')
+    export AWS_SESSION_TOKEN=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SessionToken')
+    aws sts get-caller-identity
+
+fmt:
+  stage: lint
+  script:
+    - terraform version
+    - terraform fmt -check -recursive
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+validate:
+  stage: lint
+  script:
+    - |
+      for d in envs/shared envs/dev envs/prod; do
+        echo "== validate: $d =="
+        terraform -chdir="$d" init -backend=false
+        terraform -chdir="$d" validate
+      done
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
+
+.plan_template:
+  stage: plan
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.tamacoach.net
+  before_script:
+    - *assume_oidc
+  script:
+    - test -f "envs/${TF_ENV}/terraform.tfvars" || (echo "missing envs/${TF_ENV}/terraform.tfvars"; exit 1)
+    - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
+    - terraform -chdir="envs/${TF_ENV}" plan -var-file="terraform.tfvars" -out="tfplan"
+  artifacts:
+    paths:
+      - "envs/${TF_ENV}/tfplan"
+    expire_in: 1 day
+
+plan:shared:
+  extends: .plan_template
+  variables:
+    TF_ENV: "shared"
+    AWS_ROLE_ARN: "${TF_PLAN_ROLE_ARN_SHARED}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/shared/**/*
+
+plan:dev:
+  extends: .plan_template
+  variables:
+    TF_ENV: "dev"
+    AWS_ROLE_ARN: "${TF_PLAN_ROLE_ARN_DEV}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      changes:
+        - envs/dev/**/*
+
+plan:prod:
+  extends: .plan_template
+  variables:
+    TF_ENV: "prod"
+    AWS_ROLE_ARN: "${TF_PLAN_ROLE_ARN_PROD}"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/prod/**/*
+
+.apply_template:
+  stage: apply
+  when: manual
+  allow_failure: false
+  id_tokens:
+    GITLAB_OIDC_TOKEN:
+      aud: https://gitlab.tamacoach.net
+  before_script:
+    - *assume_oidc
+  script:
+    - test -f "envs/${TF_ENV}/terraform.tfvars" || (echo "missing envs/${TF_ENV}/terraform.tfvars"; exit 1)
+    - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
+    - terraform -chdir="envs/${TF_ENV}" show -no-color tfplan | sed -n '1,200p'
+    - terraform -chdir="envs/${TF_ENV}" apply -var-file="terraform.tfvars" -auto-approve tfplan
+  rules:
+    - when: never
+
+apply:shared:
+  extends: .apply_template
+  variables:
+    TF_ENV: "shared"
+    AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_SHARED}"
+  needs:
+    - job: plan:shared
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/shared/**/*
+      when: manual
+    - when: never
+
+apply:dev:
+  extends: .apply_template
+  variables:
+    TF_ENV: "dev"
+    AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_DEV}"
+  needs:
+    - job: apply:shared
+      optional: true
+    - job: plan:dev
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      changes:
+        - envs/dev/**/*
+      when: manual
+    - when: never
+
+apply:prod:
+  extends: .apply_template
+  variables:
+    TF_ENV: "prod"
+    AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_PROD}"
+  needs:
+    - job: apply:shared
+      optional: true
+    - job: plan:prod
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/prod/**/*
+      when: manual
+    - when: never
+
