@@ -36,6 +36,7 @@ workflow:
       echo "GITLAB_OIDC_TOKEN is required"
       exit 1
     fi
+    echo "${GITLAB_OIDC_TOKEN}" | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '"oidc iss=\(.iss) aud=\(.aud) sub=\(.sub)"'
 
     CREDS_JSON=$(aws sts assume-role-with-web-identity \
       --role-arn "${AWS_ROLE_ARN}" \
@@ -76,8 +77,9 @@ validate:
   before_script:
     - *assume_oidc
   script:
+    - test -f "envs/${TF_ENV}/terraform.tfvars" || (echo "missing envs/${TF_ENV}/terraform.tfvars"; exit 1)
     - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
-    - terraform -chdir="envs/${TF_ENV}" plan -out="tfplan"
+    - terraform -chdir="envs/${TF_ENV}" plan -var-file="terraform.tfvars" -out="tfplan"
   artifacts:
     paths:
       - "envs/${TF_ENV}/tfplan"
@@ -123,9 +125,10 @@ plan:prod:
   before_script:
     - *assume_oidc
   script:
+    - test -f "envs/${TF_ENV}/terraform.tfvars" || (echo "missing envs/${TF_ENV}/terraform.tfvars"; exit 1)
     - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
     - terraform -chdir="envs/${TF_ENV}" show -no-color tfplan | sed -n '1,200p'
-    - terraform -chdir="envs/${TF_ENV}" apply -auto-approve tfplan
+    - terraform -chdir="envs/${TF_ENV}" apply -var-file="terraform.tfvars" -auto-approve tfplan
   rules:
     - when: never
 
@@ -139,6 +142,8 @@ apply:shared:
       artifacts: true
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
+      changes:
+        - envs/shared/**/*
       when: manual
     - when: never
 
@@ -149,6 +154,7 @@ apply:dev:
     AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_DEV}"
   needs:
     - job: apply:shared
+      optional: true
     - job: plan:dev
       artifacts: true
   rules:
@@ -165,6 +171,7 @@ apply:prod:
     AWS_ROLE_ARN: "${TF_APPLY_ROLE_ARN_PROD}"
   needs:
     - job: apply:shared
+      optional: true
     - job: plan:prod
       artifacts: true
   rules:
