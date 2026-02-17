@@ -1,67 +1,47 @@
-# Outputs 설계 + 전달 경로 확정 (Step G)
+# Outputs 및 공유값 전달 규칙
 
-본 문서는 P1 단계에서 Outputs의 **키 이름**과 **전달 경로(SSM Parameter Store)** 규칙만 확정한다.
-Terraform의 SSM 자동 저장(`aws_ssm_parameter`) 코드는 아직 적용하지 않으며, 해당 자동화는 P3~P5에서 구현한다.
+현재 레포 기준으로 팀/스택 간 공유값은 다음 원칙으로 전달한다.
 
-## 1) Outputs Contract
+- 우선순위 1: `terraform output`
+- 우선순위 2: SSM Parameter Store (이미 코드에서 관리 중인 항목만)
 
-### 1-1. front (shared)
-- `front_bucket_name`
-- `cloudfront_distribution_id`
+## 1) 현재 stack별 주요 outputs
 
-### 1-2. api (shared)
-- `api_custom_domain`
-- `api_stage_mapping`
+## 1-1. `envs/shared`
+- `ssm_shared_prefix`
+- `ssm_network_prefix`
+- `private_subnet_ids_dev`
+- `private_subnet_ids_prod`
 
-### 1-3. ecr (shared)
-- `ecr_repository_url`
+## 1-2. `envs/dev`
+- `eks_cluster_name`, `eks_cluster_arn`, `eks_cluster_endpoint`
+- `eks_oidc_provider_arn`, `eks_oidc_provider_url`
+- `eks_system_nodegroup_name`, `eks_system_nodegroup_role_arn`
+- `irsa_role_arns`, `irsa_serviceaccount_names`
+- `eks_access_applied_entries`, `eks_access_entry_ids`
+- `jump_host_instance_id`, `jump_host_private_ip`, `jump_host_security_group_id`
 
-### 1-4. eks (dev/prod)
-- `eks_dev_cluster_name`
-- `eks_prod_cluster_name`
+## 1-3. `envs/prod`
+- `envs/dev`와 동일 구조
 
-### 1-5. nlb (dev/prod)
-- `nlb_dev_arn`
-- `nlb_dev_tg_arn`
-- `nlb_prod_arn`
-- `nlb_prod_tg_arn`
+## 2) SSM 저장 상태 (현재 코드 기준)
 
-## 2) SSM Path Mapping
+- `shared` 스택은 네트워크 공유값을 SSM에 저장한다.
+  - 예: `/${project}/shared/network/vpc_id`
+  - 예: `/${project}/shared/network/private_subnet_ids`
+  - 예: `/${project}/shared/network/sg_ids`
+- `dev/prod`는 점프호스트 식별값을 SSM에 저장한다.
+  - 예: `/${project}/${env}/platform/jump/instance_id`
+  - 예: `/${project}/${env}/platform/jump/private_ip`
+  - 예: `/${project}/${env}/platform/jump/security_group_id`
 
-경로 규칙:
+참고:
+- `project` 값은 스택별 실제 설정(`tm` 또는 `tamacoach`)을 따른다. 레거시 리소스는 `tm` prefix가 남아있을 수 있다.
+- 모든 output이 자동으로 SSM에 저장되는 구조는 아니다.
 
-`/{project}/{env}/{domain}/{key}`
+## 3) 운영 규칙
 
-고정 값:
-- `project = tm`
-- `env ∈ {shared, dev, prod}`
-- `domain ∈ {front, api, ecr, eks, nlb}`
-
-Front는 "S3 1개 + CloudFront 1개 + prefix로 dev/prod 분리" 구조이므로 outputs는 `shared` 경로로 관리한다.
-
-| Output Key | SSM Path |
-|---|---|
-| `front_bucket_name` | `/tm/shared/front/front_bucket_name` |
-| `cloudfront_distribution_id` | `/tm/shared/front/cloudfront_distribution_id` |
-| `api_custom_domain` | `/tm/shared/api/api_custom_domain` |
-| `api_stage_mapping` | `/tm/shared/api/api_stage_mapping` |
-| `ecr_repository_url` | `/tm/shared/ecr/ecr_repository_url` |
-| `eks_dev_cluster_name` | `/tm/dev/eks/eks_dev_cluster_name` |
-| `eks_prod_cluster_name` | `/tm/prod/eks/eks_prod_cluster_name` |
-| `nlb_dev_arn` | `/tm/dev/nlb/nlb_dev_arn` |
-| `nlb_dev_tg_arn` | `/tm/dev/nlb/nlb_dev_tg_arn` |
-| `nlb_prod_arn` | `/tm/prod/nlb/nlb_prod_arn` |
-| `nlb_prod_tg_arn` | `/tm/prod/nlb/nlb_prod_tg_arn` |
-
-## 3) Who Uses What
-
-- front CI/CD: `front_bucket_name`, `cloudfront_distribution_id`
-- backend/worker CI/CD 또는 운영: `ecr_repository_url`
-- platform/ops 또는 ArgoCD bootstrap: `eks_dev_cluster_name`, `eks_prod_cluster_name`, `nlb_dev_arn`, `nlb_dev_tg_arn`, `nlb_prod_arn`, `nlb_prod_tg_arn`
-- API 라우팅 설정: `api_custom_domain`, `api_stage_mapping`
-
-## 4) Policy
-
-- `tfvars`에는 비밀값을 저장하지 않는다. 민감정보는 필요 시 SSM SecureString 또는 Secrets Manager를 사용한다.
-- overwrite 정책: dev는 overwrite 허용(운영 편의), prod는 승인/정책 하에서만 변경 가능하도록 제한한다.
-- 현재 단계(P1)에서는 SSM 자동 저장 미구현 상태이므로, 값 조회는 우선 `terraform output`으로 수행한다.
+- 팀 간 계약값은 먼저 `terraform output` 이름으로 합의한다.
+- SSM에 없는 output은 필요 시 별도 `aws_ssm_parameter` 리소스로 명시 추가한다.
+- `tfvars`에 비밀값은 커밋하지 않는다.
+- 민감정보는 SSM SecureString 또는 Secrets Manager를 사용한다.

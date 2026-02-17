@@ -1,12 +1,22 @@
 variable "project" {
   type        = string
   description = "Project identifier (e.g., tamacochi)"
+
+  validation {
+    condition     = var.project == "tamacoach"
+    error_message = "project must be \"tamacoach\"."
+  }
 }
 
 variable "resource_naming_project" {
   type        = string
   description = "Project token used for shared physical resource names to avoid forced replacement during naming migration."
   default     = "tm"
+
+  validation {
+    condition     = contains(["tm", "tamacoach"], var.resource_naming_project)
+    error_message = "resource_naming_project must be one of: tm, tamacoach."
+  }
 }
 
 variable "env" {

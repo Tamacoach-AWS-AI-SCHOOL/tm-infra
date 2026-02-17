@@ -81,9 +81,9 @@ dedicated=system:NoSchedule
 * metrics-server
 * Karpenter Controller
 * AWS Load Balancer Controller
-* ADOT Collector
-* Fluent Bit
-* External Secrets
+* (선택) ADOT Collector
+* (선택) Fluent Bit
+* (선택) External Secrets
 
 ---
 
@@ -231,8 +231,8 @@ IAM Access Entry 대상이 아니며,
 System 노드에 배치:
 
 * metrics-server
-* ADOT Collector (remote_write → AMP)
-* Fluent Bit
+* (도입 시) ADOT Collector (remote_write → AMP)
+* (도입 시) Fluent Bit
 
 ---
 
@@ -247,6 +247,9 @@ System 노드에 배치:
 * karpenter
 * AWS Load Balancer Controller
 * EBS CSI Driver
+
+선택(P9 단계):
+
 * ADOT Collector
 * Fluent Bit
 * External Secrets
@@ -268,7 +271,7 @@ System 노드에 배치:
 ## 1) IRSA 스코프 확정 (최종)
 
 project_prefix는 Terraform 변수로 정의되며,
-예: "/tamacoach" 형태로 설정된다.
+예: `"/${project}"` 형태로 설정된다. (실제 운영값은 `tm` 또는 `tamacoach`)
 SSM 및 Secrets 경로는 해당 prefix를 기준으로 구성된다.
 
 ### 1-1. SSM 경로 규칙
@@ -411,7 +414,7 @@ Karpenter는 Controller용 IRSA Role과,
 
 ## 변수로 고정해야 하는 목록(문서/TF 변수)
 
-* `project_prefix = "/tamacoach"`
+* `project_prefix = "/${project}"`
 * `ssm_shared_prefix = "${var.project_prefix}/shared"`
 * `ssm_env_prefix = "${var.project_prefix}/${var.env}"`
 * `secrets_prefix = "${var.project_prefix}/${var.env}"`
