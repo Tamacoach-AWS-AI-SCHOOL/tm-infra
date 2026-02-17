@@ -1,0 +1,83 @@
+project    = "tamacoach"
+env        = "prod"
+owner      = "platform-team"
+aws_region = "ap-northeast-2"
+
+enable_irsa = true
+enable_access_entries = true
+enable_rbac           = true
+enable_jump_host      = true
+
+kubernetes_version = "1.30"
+system_nodegroup_instance_types = ["t3.medium"]
+system_nodegroup_min_size       = 2
+system_nodegroup_max_size       = 4
+system_nodegroup_desired_size   = 2
+jump_host_instance_type         = "t3.small"
+jump_host_install_helm          = false
+jump_host_kubectl_version       = "1.30.0"
+
+# 필요 시만 설정
+backend_queue_arns = []
+worker_queue_arns  = []
+
+access_entries = [
+  {
+    principal_arn = "arn:aws:iam::193629269600:role/jump-prod-tamacoach-role"
+    groups        = ["tama:platform-admin"]
+  },
+  {
+    principal_arn = "arn:aws:iam::193629269600:role/tm-infra-terraform-admin"
+    groups        = ["tama:platform-admin"]
+  }
+]
+
+apps_namespace                  = "apps"
+platform_namespace              = "platform"
+argocd_namespace                = "argocd"
+argocd_controller_serviceaccount = "argocd-application-controller"
+
+# Pass these from your EKS stack outputs when enable_irsa = true.
+# cluster_name      = module.eks.cluster_name
+# oidc_provider_arn = module.eks.oidc_provider_arn
+# oidc_provider_url = module.eks.oidc_provider_url
+
+# Keep empty if this stack does not create SSM parameters directly.
+# ssm_parameter_names = [
+#   "/tamacoach/prod/app/backend/db_url",
+#   "/tamacoach/prod/sqs/worker-task/url",
+# ]
+
+# backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-prod-domain-purpose"]
+# worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-prod-domain-purpose"]
+# lbc_policy_arns / karpenter_policy_arns are optional overrides.
+# By default, Terraform creates and uses:
+# - AWSLoadBalancerControllerIAMPolicy-${project}-${env}
+# - KarpenterControllerPolicy-${project}-${env}
+# karpenter_node_role_arn = "arn:aws:iam::123456789012:role/karpenter-node-role-prod"
+# karpenter_interruption_queue_arn = "arn:aws:sqs:ap-northeast-2:123456789012:karpenter-interruption-prod"
+# enable_adot_irsa = false
+# adot_policy_arns = []
+# enable_external_secrets_irsa = false
+# external_secrets_policy_arns = []
+
+# access_entries = [
+#   {
+#     principal_arn = "arn:aws:iam::123456789012:role/tamacoach-platform-admin"
+#     groups        = ["tama:platform-admin"]
+#   },
+#   {
+#     principal_arn = "arn:aws:iam::123456789012:role/tamacoach-platform-ops"
+#     groups        = ["tama:platform-ops"]
+#   },
+#   {
+#     principal_arn = "arn:aws:iam::123456789012:role/tamacoach-developer"
+#     groups        = ["tama:developer"]
+#   },
+#   {
+#     principal_arn = "arn:aws:iam::123456789012:role/tamacoach-argocd-deployer"
+#     groups        = ["tama:argocd-deployer"]
+#   },
+# ]
+#
+

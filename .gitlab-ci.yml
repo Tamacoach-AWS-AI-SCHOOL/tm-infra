@@ -5,27 +5,44 @@
 # Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
-stages:
-- build
-- test
-- deploy
-- review
-- dast
-- staging
-- canary
-- production
-- incremental rollout 10%
-- incremental rollout 25%
-- incremental rollout 50%
-- incremental rollout 100%
-- performance
-- cleanup
-- secret-detection
-sast:
-  stage: test
-include:
-- template: Auto-DevOps.gitlab-ci.yml
-variables:
-  SECRET_DETECTION_ENABLED: 'true'
-secret_detection:
-  stage: secret-detection
+
+oidc-smoke-sts:
+  stage: lint
+  image: amazon/aws-cli:2
+  variables:
+    AWS_REGION: ap-northeast-2
+    AWS_STS_REGIONAL_ENDPOINTS: regional
+  script:
+    - |
+      if [ -z "${CI_JOB_JWT_V2:-}" ]; then
+        echo "CI_JOB_JWT_V2 is empty"; exit 1
+      fi
+
+      if [ "$CI_COMMIT_BRANCH" = "develop" ]; then
+        ROLE_ARN="$TF_PLAN_ROLE_ARN_DEV"
+      elif [ "$CI_COMMIT_BRANCH" = "main" ]; then
+        ROLE_ARN="$TF_PLAN_ROLE_ARN_PROD"
+      else
+        echo "Skip: branch=$CI_COMMIT_BRANCH"; exit 0
+      fi
+
+      if [ -z "${ROLE_ARN:-}" ]; then
+        echo "ROLE_ARN is empty"; exit 1
+      fi
+
+      read AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<EOF
+      $(aws sts assume-role-with-web-identity \
+        --role-arn "$ROLE_ARN" \
+        --role-session-name "gitlab-oidc-smoke-${CI_PIPELINE_ID}" \
+        --web-identity-token "$CI_JOB_JWT_V2" \
+        --duration-seconds 900 \
+        --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+        --output text)
+      EOF
+
+      export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
+      aws sts get-caller-identity
+  when: manual
+  allow_failure: false
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
