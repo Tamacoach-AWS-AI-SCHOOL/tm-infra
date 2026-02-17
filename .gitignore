@@ -13,6 +13,10 @@ override.tf.json
 # .terraform.lock.hcl
 
 # Environment files
+!envs/shared/terraform.tfvars
+!envs/dev/terraform.tfvars
+!envs/prod/terraform.tfvars
+
 *.tfvars
 *.tfvars.json
 
