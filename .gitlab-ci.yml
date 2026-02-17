@@ -11,14 +11,15 @@ stages:
   - plan
   - apply
 
+variables:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  TF_CLI_ARGS: "-no-color"
+  AWS_DEFAULT_REGION: "ap-northeast-2"
+
 default:
   tags:
     - terraform
-  variables:
-    TF_IN_AUTOMATION: "true"
-    TF_INPUT: "false"
-    TF_CLI_ARGS: "-no-color"
-    AWS_DEFAULT_REGION: "ap-northeast-2"
 
 workflow:
   rules:
