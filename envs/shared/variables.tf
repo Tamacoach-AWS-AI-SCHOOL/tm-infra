@@ -108,3 +108,75 @@ variable "tflock_table" {
   type        = string
   description = "Remote state DynamoDB lock table name (created by bootstrap)"
 }
+
+variable "enable_gitlab_oidc" {
+  type        = bool
+  description = "Enable GitLab OIDC provider and Terraform CI plan/apply IAM roles."
+  default     = false
+}
+
+variable "gitlab_oidc_issuer_url" {
+  type        = string
+  description = "GitLab OIDC issuer URL. Example: https://gitlab.com"
+  default     = ""
+}
+
+variable "gitlab_oidc_audience" {
+  type        = string
+  description = "Expected GitLab JWT aud claim value."
+  default     = ""
+}
+
+variable "gitlab_oidc_thumbprint_list" {
+  type        = list(string)
+  description = "Thumbprint list for AWS IAM OIDC provider."
+  default     = []
+}
+
+variable "gitlab_project_path" {
+  type        = string
+  description = "GitLab project path in sub claim. Example: group/subgroup/project"
+  default     = ""
+}
+
+variable "gitlab_role_name_prefix" {
+  type        = string
+  description = "Optional role name prefix override. Defaults to project-env naming."
+  default     = ""
+}
+
+variable "gitlab_oidc_kms_key_arn" {
+  type        = string
+  description = "Optional KMS key ARN used for backend state encryption."
+  default     = null
+}
+
+variable "gitlab_oidc_apply_branch" {
+  type        = string
+  description = "Apply role allowed branch."
+  default     = "main"
+}
+
+variable "gitlab_oidc_aud_claim_name" {
+  type        = string
+  description = "JWT audience claim key name."
+  default     = "aud"
+}
+
+variable "gitlab_oidc_sub_claim_name" {
+  type        = string
+  description = "JWT subject claim key name."
+  default     = "sub"
+}
+
+variable "gitlab_oidc_plan_sub_patterns" {
+  type        = list(string)
+  description = "Optional override for plan role sub claim patterns."
+  default     = []
+}
+
+variable "gitlab_oidc_apply_sub_patterns" {
+  type        = list(string)
+  description = "Optional override for apply role sub claim patterns."
+  default     = []
+}
