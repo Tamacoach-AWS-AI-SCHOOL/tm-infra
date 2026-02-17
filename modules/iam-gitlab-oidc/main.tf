@@ -185,18 +185,24 @@ data "aws_iam_policy_document" "plan_permissions" {
       "eks:List*",
       "elasticloadbalancing:Describe*",
       "logs:Describe*",
+      "logs:ListTagsForResource",
       "ecr:Describe*",
       "ecr:List*",
       "ssm:Describe*",
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:GetParametersByPath",
+      "ssm:ListTagsForResource",
       "secretsmanager:DescribeSecret",
       "secretsmanager:GetSecretValue",
       "iam:Get*",
       "iam:List*",
       "route53:Get*",
       "route53:List*",
+      "eks:ListTagsForResource",
+      "s3:GetBucketTagging",
+      "s3:GetBucketVersioning",
+      "s3:GetEncryptionConfiguration",
     ]
     resources = ["*"]
   }
@@ -299,4 +305,3 @@ resource "aws_iam_role_policy_attachment" "apply_attach" {
   role       = aws_iam_role.apply.name
   policy_arn = aws_iam_policy.apply.arn
 }
-
