@@ -1,6 +1,11 @@
 variable "project" {
   type        = string
   description = "Project identifier (e.g., tamacochi)"
+
+  validation {
+    condition     = var.project == "tamacoach"
+    error_message = "project must be \"tamacoach\"."
+  }
 }
 
 variable "env" {

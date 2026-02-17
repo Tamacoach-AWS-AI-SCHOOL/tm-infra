@@ -1,6 +1,6 @@
-# Tamacochi – Infrastructure Repository
+# Tamacoach – Infrastructure Repository
 
-이 저장소는 Terraform을 사용하여 Tamacochi 서비스의 AWS 인프라를 관리한다
+이 저장소는 Terraform을 사용하여 Tamacoach 서비스의 AWS 인프라를 관리한다
 
 shared, dev, prod 환경을 분리하여 인프라를 구성하며,
 애플리케이션 배포 상태는 별도의 manifest-repo(tm-manifest)에서 관리된다.
@@ -144,24 +144,21 @@ terraform apply
 
 ## 저장 방식
 
-- **Terraform이 `aws_ssm_parameter`로 자동 저장**
-  - `terraform apply` 시점에 output 값을 SSM에 함께 기록
+- 일부 값만 Terraform `aws_ssm_parameter`로 SSM에 저장한다.
+  - shared: 네트워크 공유값
+  - dev/prod: 점프호스트 식별값
 
 ## 예시 outputs
 
-- front_bucket_name
-- cloudfront_distribution_id
-- api_custom_domain
-- ecr_repository_url
-- eks_cluster_name
-- nlb_arn
-- nlb_target_group_arn
+- shared: `private_subnet_ids_dev`, `private_subnet_ids_prod`
+- dev/prod: `eks_cluster_name`, `eks_cluster_arn`, `irsa_role_arns`, `jump_host_instance_id`
 
 ## SSM 경로 규칙
 
 - shared(network only): `/${project}/shared/network/...`
 - dev/prod(runtime): `/${project}/${env}/app/...`, `/${project}/${env}/sqs/...`, `/${project}/${env}/obs/...`
 - secrets prefix: `${project}/${env}/...` (선행 `/` 없이)
+- 실제 운영 `project` 값은 스택 설정을 따르며, 레거시 리소스에는 `tm` prefix가 남아있을 수 있다.
 
 ---
 

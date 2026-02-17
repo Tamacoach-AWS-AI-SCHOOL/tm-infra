@@ -142,6 +142,15 @@ resource "aws_subnet" "private_prod" {
     Environment = "shared"
     Project     = var.project
   }
+
+  # Subnet workload tags are owned by env stacks (aws_ec2_tag), not shared subnet resource.
+  lifecycle {
+    ignore_changes = [
+      tags["karpenter.sh/discovery"],
+      tags["kubernetes.io/cluster/eks-prod"],
+      tags["kubernetes.io/role/internal-elb"],
+    ]
+  }
 }
 
 resource "aws_route_table_association" "private_prod" {

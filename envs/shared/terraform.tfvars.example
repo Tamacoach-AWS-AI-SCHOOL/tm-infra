@@ -43,3 +43,14 @@ db_subnet_azs = [
 nat_mode     = "ha"
 backend_port = 8000
 db_port      = 5432
+
+# GitLab OIDC + Terraform CI roles (shared)
+enable_gitlab_oidc = false
+
+# gitlab_oidc_issuer_url = "https://gitlab.com"
+# gitlab_oidc_audience = "https://gitlab.com"
+# gitlab_oidc_thumbprint_list = ["9e99a48a9960b14926bb7f3b02e22da0ecd0e5b0"]
+# gitlab_project_path = "group/subgroup/tm-infra"
+# gitlab_role_name_prefix_shared = "tamacoach-shared" # keep existing shared role name
+# gitlab_role_name_prefix_dev = "tamacoach-dev"
+# gitlab_role_name_prefix_prod = "tamacoach-prod"
