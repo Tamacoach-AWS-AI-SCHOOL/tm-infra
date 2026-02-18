@@ -128,7 +128,7 @@ plan:prod:
     - test -f "envs/${TF_ENV}/terraform.tfvars" || (echo "missing envs/${TF_ENV}/terraform.tfvars"; exit 1)
     - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
     - terraform -chdir="envs/${TF_ENV}" show -no-color tfplan | sed -n '1,200p'
-    - terraform -chdir="envs/${TF_ENV}" apply -var-file="terraform.tfvars" -auto-approve tfplan
+    - terraform -chdir="envs/${TF_ENV}" apply -auto-approve tfplan
   rules:
     - when: never
 
