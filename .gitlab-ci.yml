@@ -83,6 +83,7 @@ validate:
   artifacts:
     paths:
       - "envs/${TF_ENV}/tfplan"
+      - "envs/${TF_ENV}/lambda/**/*.zip"
     expire_in: 1 day
 
 plan:shared:
