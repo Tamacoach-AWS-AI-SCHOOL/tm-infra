@@ -201,12 +201,23 @@ data "aws_iam_policy_document" "plan_permissions" {
       "acm:GetCertificate",
       "acm:ListCertificates",
       "acm:ListTagsForCertificate",
+      "cloudfront:GetDistribution",
+      "cloudfront:GetDistributionConfig",
+      "cloudfront:GetFunction",
+      "cloudfront:DescribeFunction",
+      "cloudfront:GetOriginAccessControl",
+      "cloudfront:ListOriginAccessControls",
+      "cloudfront:ListTagsForResource",
       "route53:Get*",
       "route53:List*",
       "eks:ListTagsForResource",
       "s3:GetBucketTagging",
       "s3:GetBucketVersioning",
       "s3:GetEncryptionConfiguration",
+      "s3:GetBucketPublicAccessBlock",
+      "s3:GetBucketOwnershipControls",
+      "s3:GetBucketPolicy",
+      "s3:GetBucketWebsite",
     ]
     resources = ["*"]
   }
