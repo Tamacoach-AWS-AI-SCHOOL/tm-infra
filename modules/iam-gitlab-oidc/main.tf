@@ -210,6 +210,9 @@ data "aws_iam_policy_document" "plan_permissions" {
       "cloudfront:ListTagsForResource",
       "route53:Get*",
       "route53:List*",
+      "apigateway:GET",
+      "lambda:Get*",
+      "lambda:List*",
       "eks:ListTagsForResource",
       "s3:*",
     ]
