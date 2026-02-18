@@ -105,8 +105,8 @@ resource "aws_lb" "tamacoach_shared_backend_internal" {
   name               = "${local.name_prefix}-backend-${each.key}-nlb"
   internal           = true
   load_balancer_type = "network"
-  subnets         = local.backend_subnet_ids_resolved[each.key]
-  security_groups = [aws_security_group.tamacoach_shared_backend_nlb[each.key].id]
+  subnets            = local.backend_subnet_ids_resolved[each.key]
+  security_groups    = [aws_security_group.tamacoach_shared_backend_nlb[each.key].id]
 
   tags = merge(local.common_tags, {
     Name        = "${local.name_prefix}-backend-${each.key}-nlb"
