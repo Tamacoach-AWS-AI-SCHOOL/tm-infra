@@ -110,6 +110,11 @@ tamacoach-shared-<resource>
 * 임의 축약 금지
 * 기존 리소스 이름 절대 변경 금지
 
+예외(단일 허용):
+* `aws_lb`(NLB) 이름은 AWS 32자 제한으로 인해 `envs/shared/backend_infra.tf`의
+  `aws_lb.tamacoach_shared_backend_internal`에 한해 `-backend-`를 `-be-`로 축약 허용.
+* 이 예외는 해당 리소스 1건에만 적용하며, 다른 리소스/스택으로 확장 금지.
+
 만약 plan에 다음이 보이면 즉시 중지:
 
 ```
