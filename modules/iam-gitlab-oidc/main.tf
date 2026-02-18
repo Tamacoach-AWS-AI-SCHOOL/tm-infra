@@ -197,6 +197,10 @@ data "aws_iam_policy_document" "plan_permissions" {
       "secretsmanager:GetSecretValue",
       "iam:Get*",
       "iam:List*",
+      "acm:DescribeCertificate",
+      "acm:GetCertificate",
+      "acm:ListCertificates",
+      "acm:ListTagsForCertificate",
       "route53:Get*",
       "route53:List*",
       "eks:ListTagsForResource",
@@ -220,6 +224,22 @@ resource "aws_iam_role_policy_attachment" "plan_attach" {
 }
 
 data "aws_iam_policy_document" "apply_permissions" {
+  statement {
+    sid    = "TerraformInfrastructureManagement"
+    effect = "Allow"
+    actions = [
+      "acm:*",
+      "route53:*",
+      "cloudfront:*",
+      "s3:*",
+      "apigateway:*",
+      "lambda:*",
+      "iam:PassRole",
+      "iam:GetRole",
+    ]
+    resources = ["*"]
+  }
+
   statement {
     sid    = "ApplyMutationsByServiceScope"
     effect = "Allow"
@@ -259,6 +279,10 @@ data "aws_iam_policy_document" "apply_permissions" {
       "logs:Create*",
       "logs:PutRetentionPolicy",
       "logs:Delete*",
+      "acm:RequestCertificate",
+      "acm:DeleteCertificate",
+      "acm:AddTagsToCertificate",
+      "acm:RemoveTagsFromCertificate",
       "route53:ChangeResourceRecordSets",
       "route53:Create*",
       "route53:Delete*",
