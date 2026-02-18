@@ -38,11 +38,18 @@ workflow:
     fi
     echo "${GITLAB_OIDC_TOKEN}" | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '"oidc iss=\(.iss) aud=\(.aud) sub=\(.sub)"'
 
+    set +e
     CREDS_JSON=$(aws sts assume-role-with-web-identity \
       --role-arn "${AWS_ROLE_ARN}" \
       --role-session-name "gitlab-${CI_PROJECT_ID}-${CI_JOB_ID}" \
       --web-identity-token "${GITLAB_OIDC_TOKEN}" \
-      --duration-seconds 3600 2>&1) || { echo "${CREDS_JSON}"; exit 1; }
+      --duration-seconds 3600 2>&1)
+    STS_EXIT=$?
+    set -e
+    echo "${CREDS_JSON}"
+    if [ "${STS_EXIT}" -ne 0 ]; then
+      exit "${STS_EXIT}"
+    fi
 
     export AWS_ACCESS_KEY_ID=$(echo "${CREDS_JSON}" | jq -r '.Credentials.AccessKeyId')
     export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SecretAccessKey')
