@@ -102,7 +102,7 @@ resource "aws_vpc_security_group_ingress_rule" "tamacoach_shared_backend_nlb_fro
 resource "aws_lb" "tamacoach_shared_backend_internal" {
   for_each = local.backend_envs
 
-  name               = "${local.name_prefix}-backend-${each.key}-nlb"
+  name               = "${local.name_prefix}-be-${each.key}-nlb"
   internal           = true
   load_balancer_type = "network"
   subnets            = local.backend_subnet_ids_resolved[each.key]
