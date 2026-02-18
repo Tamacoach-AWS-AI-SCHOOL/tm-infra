@@ -28,21 +28,26 @@ workflow:
 
 .assume_oidc: &assume_oidc
   - |
-    echo "--- OIDC DEBUG START ---"
-    echo "ROLE: ${AWS_ROLE_ARN}"
-    
-    # 1. 시도 자체를 로그에 남김
-    echo "Executing STS AssumeRole command..."
-    
-    # 2. 모든 에러 메시지를 화면에 즉시 출력 (파일 저장 생략)
+    echo "Starting AWS STS AssumeRole..."
+    # 1. 임시 파일에 권한 정보 저장
     aws sts assume-role-with-web-identity \
       --role-arn "${AWS_ROLE_ARN}" \
-      --role-session-name "debug-$(date +%s)" \
+      --role-session-name "gitlab-${CI_PROJECT_ID}-${CI_JOB_ID}" \
       --web-identity-token "${GITLAB_OIDC_TOKEN}" \
-      --region ap-northeast-2
+      --duration-seconds 3600 \
+      --region ap-northeast-2 \
+      --output json > sts_creds.json
+
+    # 2. JSON에서 값을 추출하여 환경 변수로 등록 (테라폼이 이걸 보고 움직입니다)
+    export AWS_ACCESS_KEY_ID=$(jq -r '.Credentials.AccessKeyId' sts_creds.json)
+    export AWS_SECRET_ACCESS_KEY=$(jq -r '.Credentials.SecretAccessKey' sts_creds.json)
+    export AWS_SESSION_TOKEN=$(jq -r '.Credentials.SessionToken' sts_creds.json)
     
-    # 3. 위 명령어가 실패하면 여기서 멈출 것이고, 성공하면 아래가 실행됨
-    echo "If you see this, AssumeRole was successful!"
+    # 3. 보안을 위해 임시 파일 삭제
+    rm sts_creds.json
+    
+    echo "Credentials successfully exported. Ready for Terraform."
+    aws sts get-caller-identity
 
 fmt:
   stage: lint
