@@ -67,3 +67,13 @@ output "TF_APPLY_ROLE_ARN_PROD" {
   description = "Terraform apply role ARN for prod."
   value       = try(module.gitlab_ci_oidc_prod[0].apply_role_arn, null)
 }
+
+output "cloudfront_certificate_arn" {
+  description = "ACM certificate ARN for CloudFront (*.tamacoach.net, tamacoach.net) in us-east-1."
+  value       = aws_acm_certificate_validation.tamacoach_shared_cloudfront.certificate_arn
+}
+
+output "apigw_certificate_arn" {
+  description = "ACM certificate ARN for API Gateway (api/api-stage.tamacoach.net) in ap-northeast-2."
+  value       = aws_acm_certificate_validation.tamacoach_shared_apigw.certificate_arn
+}
