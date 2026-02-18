@@ -16,6 +16,8 @@ locals {
     dev  = [for subnet in data.aws_subnet.tamacoach_backend_dev : subnet.id]
     prod = [for subnet in data.aws_subnet.tamacoach_backend_prod : subnet.id]
   }
+
+  backend_health_lambda_name = "${local.name_prefix}-backend-health"
 }
 
 data "aws_vpc" "tamacoach_shared" {
@@ -188,6 +190,55 @@ resource "aws_apigatewayv2_api" "tamacoach_shared_backend" {
   })
 }
 
+data "archive_file" "tamacoach_shared_backend_health_lambda" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/health/index.py"
+  output_path = "${path.module}/lambda/health/index.zip"
+}
+
+resource "aws_iam_role" "tamacoach_shared_backend_health_lambda" {
+  name = "${local.name_prefix}-backend-health-lambda-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(local.common_tags, {
+    Name        = "${local.name_prefix}-backend-health-lambda-role"
+    Environment = local.env
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "tamacoach_shared_backend_health_lambda_basic" {
+  role       = aws_iam_role.tamacoach_shared_backend_health_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_function" "tamacoach_shared_backend_health" {
+  function_name    = local.backend_health_lambda_name
+  role             = aws_iam_role.tamacoach_shared_backend_health_lambda.arn
+  runtime          = "python3.12"
+  handler          = "index.handler"
+  filename         = data.archive_file.tamacoach_shared_backend_health_lambda.output_path
+  source_code_hash = data.archive_file.tamacoach_shared_backend_health_lambda.output_base64sha256
+  timeout          = 3
+
+  tags = merge(local.common_tags, {
+    Name        = local.backend_health_lambda_name
+    Environment = local.env
+  })
+
+  depends_on = [aws_iam_role_policy_attachment.tamacoach_shared_backend_health_lambda_basic]
+}
+
 resource "aws_apigatewayv2_integration" "tamacoach_shared_backend_private" {
   for_each = local.backend_envs
 
@@ -200,21 +251,14 @@ resource "aws_apigatewayv2_integration" "tamacoach_shared_backend_private" {
   connection_id          = aws_apigatewayv2_vpc_link.tamacoach_shared_backend[each.key].id
 }
 
-resource "aws_apigatewayv2_integration" "tamacoach_shared_backend_health_mock" {
+resource "aws_apigatewayv2_integration" "tamacoach_shared_backend_health_lambda" {
   for_each = local.backend_envs
 
   api_id                 = aws_apigatewayv2_api.tamacoach_shared_backend[each.key].id
-  integration_type       = "MOCK"
+  integration_type       = "AWS_PROXY"
+  integration_method     = "POST"
+  integration_uri        = aws_lambda_function.tamacoach_shared_backend_health.invoke_arn
   payload_format_version = "2.0"
-  request_templates = {
-    "overwrite:200" = jsonencode({
-      statusCode = "200"
-      body       = jsonencode({ status = "UP" })
-      headers = {
-        "Content-Type" = "application/json"
-      }
-    })
-  }
 }
 
 resource "aws_apigatewayv2_route" "tamacoach_shared_backend_health" {
@@ -222,7 +266,7 @@ resource "aws_apigatewayv2_route" "tamacoach_shared_backend_health" {
 
   api_id    = aws_apigatewayv2_api.tamacoach_shared_backend[each.key].id
   route_key = "GET /health"
-  target    = "integrations/${aws_apigatewayv2_integration.tamacoach_shared_backend_health_mock[each.key].id}"
+  target    = "integrations/${aws_apigatewayv2_integration.tamacoach_shared_backend_health_lambda[each.key].id}"
 }
 
 resource "aws_apigatewayv2_route" "tamacoach_shared_backend_proxy" {
@@ -231,6 +275,16 @@ resource "aws_apigatewayv2_route" "tamacoach_shared_backend_proxy" {
   api_id    = aws_apigatewayv2_api.tamacoach_shared_backend[each.key].id
   route_key = "ANY /{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.tamacoach_shared_backend_private[each.key].id}"
+}
+
+resource "aws_lambda_permission" "tamacoach_shared_backend_health_from_apigw" {
+  for_each = local.backend_envs
+
+  statement_id  = "AllowApigwInvokeHealth-${each.key}"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tamacoach_shared_backend_health.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.tamacoach_shared_backend[each.key].execution_arn}/*/*"
 }
 
 resource "aws_apigatewayv2_stage" "tamacoach_shared_backend" {
