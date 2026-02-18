@@ -49,6 +49,10 @@ GitLab CI에서 Terraform `plan/apply` 실행 시 AccessDenied 재발을 줄이�
 - `secretsmanager:GetSecretValue`
 - `iam:Get*`
 - `iam:List*`
+- `acm:DescribeCertificate`
+- `acm:GetCertificate`
+- `acm:ListCertificates`
+- `acm:ListTagsForCertificate`
 - `route53:Get*`
 - `route53:List*`
 - `s3:GetBucketTagging`
@@ -56,12 +60,14 @@ GitLab CI에서 Terraform `plan/apply` 실행 시 AccessDenied 재발을 줄이�
 - `s3:GetEncryptionConfiguration`
 
 ## 5) Apply 추가 권한 기준
+- `acm:*`, `route53:*`, `cloudfront:*`, `s3:*`, `apigateway:*`, `lambda:*`, `iam:PassRole`, `iam:GetRole` (`TerraformInfrastructureManagement`)
 - `ec2:Create*`, `ec2:Modify*`, `ec2:Delete*`, `ec2:RunInstances`, `ec2:TerminateInstances`
 - `eks:Create*`, `eks:Update*`, `eks:Delete*`, `eks:TagResource`, `eks:UntagResource`
 - `elasticloadbalancing:Create*`, `elasticloadbalancing:Modify*`, `elasticloadbalancing:Delete*`
 - `autoscaling:Create*`, `autoscaling:Update*`, `autoscaling:Delete*`
 - `iam:Create*`, `iam:Update*`, `iam:Delete*`, `iam:Attach*`, `iam:Detach*`, `iam:PassRole`
 - `logs:Create*`, `logs:Delete*`, `logs:PutRetentionPolicy`
+- `acm:RequestCertificate`, `acm:DeleteCertificate`, `acm:AddTagsToCertificate`, `acm:RemoveTagsFromCertificate`
 - `route53:ChangeResourceRecordSets`, `route53:Create*`, `route53:Delete*`
 - `ssm:PutParameter`, `ssm:DeleteParameter`, `ssm:DeleteParameters`
 - `secretsmanager:CreateSecret`, `secretsmanager:UpdateSecret`, `secretsmanager:DeleteSecret`, `secretsmanager:TagResource`, `secretsmanager:UntagResource`
