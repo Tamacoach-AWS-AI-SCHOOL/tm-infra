@@ -200,29 +200,12 @@ resource "aws_apigatewayv2_integration" "tamacoach_shared_backend_private" {
   connection_id          = aws_apigatewayv2_vpc_link.tamacoach_shared_backend[each.key].id
 }
 
-resource "aws_apigatewayv2_integration" "tamacoach_shared_backend_health_mock" {
-  for_each = local.backend_envs
-
-  api_id                 = aws_apigatewayv2_api.tamacoach_shared_backend[each.key].id
-  integration_type       = "MOCK"
-  payload_format_version = "2.0"
-  request_templates = {
-    "overwrite:200" = jsonencode({
-      statusCode = "200"
-      body       = jsonencode({ status = "UP" })
-      headers = {
-        "Content-Type" = "application/json"
-      }
-    })
-  }
-}
-
 resource "aws_apigatewayv2_route" "tamacoach_shared_backend_health" {
   for_each = local.backend_envs
 
   api_id    = aws_apigatewayv2_api.tamacoach_shared_backend[each.key].id
   route_key = "GET /health"
-  target    = "integrations/${aws_apigatewayv2_integration.tamacoach_shared_backend_health_mock[each.key].id}"
+  target    = "integrations/${aws_apigatewayv2_integration.tamacoach_shared_backend_private[each.key].id}"
 }
 
 resource "aws_apigatewayv2_route" "tamacoach_shared_backend_proxy" {
