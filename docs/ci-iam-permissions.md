@@ -60,6 +60,7 @@ GitLab CI에서 Terraform `plan/apply` 실행 시 AccessDenied 재발을 줄이�
 - `s3:GetEncryptionConfiguration`
 
 ## 5) Apply 추가 권한 기준
+- `acm:*`, `route53:*`, `cloudfront:*`, `s3:*`, `apigateway:*`, `lambda:*`, `iam:PassRole`, `iam:GetRole` (`TerraformInfrastructureManagement`)
 - `ec2:Create*`, `ec2:Modify*`, `ec2:Delete*`, `ec2:RunInstances`, `ec2:TerminateInstances`
 - `eks:Create*`, `eks:Update*`, `eks:Delete*`, `eks:TagResource`, `eks:UntagResource`
 - `elasticloadbalancing:Create*`, `elasticloadbalancing:Modify*`, `elasticloadbalancing:Delete*`
