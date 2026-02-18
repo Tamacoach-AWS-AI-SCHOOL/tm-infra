@@ -28,12 +28,31 @@ workflow:
 
 .assume_oidc: &assume_oidc
   - |
+    echo "oidc debug: job=${CI_JOB_NAME:-unknown} env=${TF_ENV:-unknown} branch=${CI_COMMIT_REF_NAME:-unknown}"
+    echo "oidc debug: AWS_ROLE_ARN=${AWS_ROLE_ARN:-<empty>}"
+
     if [ -z "${AWS_ROLE_ARN:-}" ]; then
-      echo "AWS_ROLE_ARN is required"
+      echo "ERROR: AWS_ROLE_ARN is empty."
+      echo "Check CI/CD variable injection (protected/scope/masked) for role ARN variables."
+      echo "TF_PLAN_ROLE_ARN_SHARED=${TF_PLAN_ROLE_ARN_SHARED:-<empty>}"
+      echo "TF_PLAN_ROLE_ARN_DEV=${TF_PLAN_ROLE_ARN_DEV:-<empty>}"
+      echo "TF_PLAN_ROLE_ARN_PROD=${TF_PLAN_ROLE_ARN_PROD:-<empty>}"
+      echo "TF_APPLY_ROLE_ARN_SHARED=${TF_APPLY_ROLE_ARN_SHARED:-<empty>}"
+      echo "TF_APPLY_ROLE_ARN_DEV=${TF_APPLY_ROLE_ARN_DEV:-<empty>}"
+      echo "TF_APPLY_ROLE_ARN_PROD=${TF_APPLY_ROLE_ARN_PROD:-<empty>}"
       exit 1
     fi
+
+    case "${AWS_ROLE_ARN}" in
+      '$'* | '${'*)
+        echo "ERROR: AWS_ROLE_ARN looks unresolved: ${AWS_ROLE_ARN}"
+        echo "Expected a concrete ARN like arn:aws:iam::<account-id>:role/<role-name>"
+        exit 1
+        ;;
+    esac
+
     if [ -z "${GITLAB_OIDC_TOKEN:-}" ]; then
-      echo "GITLAB_OIDC_TOKEN is required"
+      echo "ERROR: GITLAB_OIDC_TOKEN is empty. Check id_tokens configuration."
       exit 1
     fi
     echo "${GITLAB_OIDC_TOKEN}" | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '"oidc iss=\(.iss) aud=\(.aud) sub=\(.sub)"'
