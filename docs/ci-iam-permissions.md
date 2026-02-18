@@ -53,11 +53,22 @@ GitLab CI에서 Terraform `plan/apply` 실행 시 AccessDenied 재발을 줄이�
 - `acm:GetCertificate`
 - `acm:ListCertificates`
 - `acm:ListTagsForCertificate`
+- `cloudfront:GetDistribution`
+- `cloudfront:GetDistributionConfig`
+- `cloudfront:GetFunction`
+- `cloudfront:DescribeFunction`
+- `cloudfront:GetOriginAccessControl`
+- `cloudfront:ListOriginAccessControls`
+- `cloudfront:ListTagsForResource`
 - `route53:Get*`
 - `route53:List*`
 - `s3:GetBucketTagging`
 - `s3:GetBucketVersioning`
 - `s3:GetEncryptionConfiguration`
+- `s3:GetBucketPublicAccessBlock`
+- `s3:GetBucketOwnershipControls`
+- `s3:GetBucketPolicy`
+- `s3:GetBucketWebsite`
 
 ## 5) Apply 추가 권한 기준
 - `acm:*`, `route53:*`, `cloudfront:*`, `s3:*`, `apigateway:*`, `lambda:*`, `iam:PassRole`, `iam:GetRole` (`TerraformInfrastructureManagement`)
