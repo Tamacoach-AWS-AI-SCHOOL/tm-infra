@@ -32,6 +32,22 @@ resource "aws_ec2_tag" "prod_private_subnet_internal_elb" {
   value       = "1"
 }
 
+resource "aws_ec2_tag" "prod_public_subnet_cluster_shared" {
+  for_each = toset(data.terraform_remote_state.network.outputs.public_subnet_ids)
+
+  resource_id = each.value
+  key         = "kubernetes.io/cluster/${local.cluster_name}"
+  value       = "shared"
+}
+
+resource "aws_ec2_tag" "prod_public_subnet_elb" {
+  for_each = toset(data.terraform_remote_state.network.outputs.public_subnet_ids)
+
+  resource_id = each.value
+  key         = "kubernetes.io/role/elb"
+  value       = "1"
+}
+
 resource "aws_ec2_tag" "prod_eks_nodes_sg_karpenter_discovery" {
   for_each = toset(compact([module.eks.cluster_security_group_id]))
 
