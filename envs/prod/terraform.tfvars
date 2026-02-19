@@ -3,10 +3,17 @@ env        = "prod"
 owner      = "team-a"
 aws_region = "ap-northeast-2"
 
-enable_irsa           = true
-enable_access_entries = true
-enable_rbac           = true
-enable_jump_host      = true
+argocd_project_source_repos = [
+  "https://gitlab.tamacoach.net/tamacoach/tm-manifest.git",
+  "https://gitlab.tamacoach.net/tamacoach/tm-backend.git",
+  "https://gitlab.tamacoach.net/tamacoach/tm-helm.git",
+]
+
+enable_irsa              = true
+enable_access_entries    = true
+enable_rbac              = true
+enable_jump_host         = true
+enable_argocd_repo_creds = true
 
 kubernetes_version              = "1.30"
 system_nodegroup_instance_types = ["t3.medium"]
