@@ -135,7 +135,6 @@ Project    = tamacoach
 StackEnv   = bootstrap | shared | dev | prod
 Owner      = team-devops
 ManagedBy  = terraform
-CostCenter = tamacoach
 ```
 
 ### 구현 강제 방식

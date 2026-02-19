@@ -143,6 +143,19 @@ variable "worker_queue_arns" {
   default     = []
 }
 
+variable "backend_db_password" {
+  type        = string
+  description = "Backend database password for RDS and Secrets Manager."
+  sensitive   = true
+  default     = ""
+}
+
+variable "backend_db_username" {
+  type        = string
+  description = "Backend database username for RDS and Secrets Manager."
+  default     = "damacorch"
+}
+
 variable "lbc_policy_arns" {
   type        = list(string)
   description = "Optional override policy ARNs for aws-load-balancer-controller SA. Defaults to Terraform-managed aws_iam_policy.lbc."
