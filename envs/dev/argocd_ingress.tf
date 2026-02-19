@@ -62,12 +62,23 @@ resource "kubernetes_manifest" "argocd_ingress" {
   ]
 }
 
+data "kubernetes_ingress_v1" "argocd_ingress" {
+  metadata {
+    name      = local.argocd_ingress_name
+    namespace = var.argocd_namespace
+  }
+
+  depends_on = [
+    kubernetes_manifest.argocd_ingress,
+  ]
+}
+
 resource "aws_route53_record" "argocd_cname" {
   zone_id = data.aws_route53_zone.tamacoach_net_argocd.zone_id
   name    = var.argocd_domain_name
   type    = "CNAME"
   ttl     = 300
   records = [
-    kubernetes_manifest.argocd_ingress.object.status.load_balancer.ingress[0].hostname,
+    data.kubernetes_ingress_v1.argocd_ingress.status[0].load_balancer[0].ingress[0].hostname,
   ]
 }
