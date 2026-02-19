@@ -37,7 +37,6 @@ resource "aws_db_instance" "tamacoach_backend" {
 
   identifier                = "backend-${each.key}-${var.project}-postgres"
   engine                    = "postgres"
-  engine_version            = "16.3"
   instance_class            = each.value.db_instance_class
   allocated_storage         = 100
   max_allocated_storage     = 500
