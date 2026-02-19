@@ -41,7 +41,7 @@ resource "aws_ec2_tag" "prod_private_subnet_internal_elb" {
 }
 
 resource "aws_ec2_tag" "prod_public_subnet_cluster_shared" {
-  for_each = toset(local.shared_public_subnet_ids)
+  for_each = toset(nonsensitive(local.shared_public_subnet_ids))
 
   resource_id = each.value
   key         = "kubernetes.io/cluster/${local.cluster_name}"
@@ -49,7 +49,7 @@ resource "aws_ec2_tag" "prod_public_subnet_cluster_shared" {
 }
 
 resource "aws_ec2_tag" "prod_public_subnet_elb" {
-  for_each = toset(local.shared_public_subnet_ids)
+  for_each = toset(nonsensitive(local.shared_public_subnet_ids))
 
   resource_id = each.value
   key         = "kubernetes.io/role/elb"
