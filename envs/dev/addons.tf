@@ -205,6 +205,9 @@ resource "helm_release" "argocd" {
         cm = {
           "statusbadge.enabled" = "true"
         }
+        params = {
+          "server.insecure" = "true"
+        }
         rbac = {
           "policy.default" = "readonly"
           scopes           = "[groups]"

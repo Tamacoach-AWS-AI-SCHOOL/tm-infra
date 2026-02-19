@@ -14,6 +14,7 @@ enable_rbac                  = true
 enable_irsa                  = true
 enable_adot_irsa             = false
 enable_external_secrets_irsa = false
+enable_argocd_repo_creds     = true
 
 access_entries = [
   {
