@@ -95,6 +95,7 @@ plan:shared:
     - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
       changes:
         - envs/shared/**/*
+        - modules/iam-gitlab-oidc/**/*
 
 plan:dev:
   extends: .plan_template
@@ -145,6 +146,7 @@ apply:shared:
     - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"'
       changes:
         - envs/shared/**/*
+        - modules/iam-gitlab-oidc/**/*
       when: manual
     - when: never
 
