@@ -6,6 +6,7 @@ aws_region = "ap-northeast-2"
 argocd_project_source_repos = [
   "https://gitlab.tamacoach.net/tamacoach/tm-manifest.git",
   "https://gitlab.tamacoach.net/tamacoach/tm-backend.git",
+  "https://gitlab.tamacoach.net/tamacoach/tm-helm.git",
 ]
 
 enable_irsa              = true
