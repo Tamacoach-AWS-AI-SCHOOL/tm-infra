@@ -263,6 +263,31 @@ variable "argocd_project_source_repos" {
   default     = ["https://github.com/tamacoach/tm-infra.git"]
 }
 
+variable "enable_argocd_repo_creds" {
+  type        = bool
+  description = "Create ArgoCD repo-creds secret via Secrets Manager + ExternalSecret."
+  default     = false
+}
+
+variable "argocd_repo_creds_url" {
+  type        = string
+  description = "Git repository/org URL prefix used by ArgoCD repo-creds."
+  default     = "https://gitlab.tamacoach.net/tamacoach"
+}
+
+variable "argocd_repo_creds_username" {
+  type        = string
+  description = "GitLab username for ArgoCD repo-creds."
+  default     = ""
+}
+
+variable "argocd_repo_creds_token" {
+  type        = string
+  description = "GitLab token for ArgoCD repo-creds."
+  sensitive   = true
+  default     = ""
+}
+
 variable "argocd_domain_name" {
   type        = string
   description = "FQDN exposed by ArgoCD ingress."

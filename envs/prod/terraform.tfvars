@@ -12,6 +12,7 @@ enable_irsa           = true
 enable_access_entries = true
 enable_rbac           = true
 enable_jump_host      = true
+enable_argocd_repo_creds = true
 
 kubernetes_version              = "1.30"
 system_nodegroup_instance_types = ["t3.medium"]
