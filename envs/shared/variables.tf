@@ -210,3 +210,21 @@ variable "gitlab_oidc_apply_sub_patterns_prod" {
   description = "Optional override for prod apply role sub claim patterns."
   default     = []
 }
+
+variable "front_acm_certificate_arn" {
+  type        = string
+  description = "ACM certificate ARN in us-east-1 for CloudFront aliases."
+  default     = "arn:aws:acm:us-east-1:193629269600:certificate/6427610b-8e35-45d7-b8dd-9b99d96271ce"
+}
+
+variable "front_route53_zone_id" {
+  type        = string
+  description = "Route53 public hosted zone ID for tamacoach.net."
+  default     = "Z05932332LR39MIMVJBRC"
+}
+
+variable "front_alias_name" {
+  type        = string
+  description = "Alias domain for frontend CloudFront distribution."
+  default     = "tamacoach.net"
+}
