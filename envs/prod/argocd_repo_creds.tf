@@ -1,15 +1,18 @@
 locals {
   argocd_repo_creds_secret_aws_name = "${local.secrets_prefix}/argocd/repo-creds/gitlab"
+  argocd_repository_urls = {
+    tm-helm     = "https://gitlab.tamacoach.net/tamacoach/tm-helm.git"
+    tm-manifest = "https://gitlab.tamacoach.net/tamacoach/tm-manifest.git"
+  }
 }
 
 check "argocd_repo_creds_inputs" {
   assert {
     condition = !var.enable_argocd_repo_creds || (
       var.argocd_repo_creds_username != "" &&
-      var.argocd_repo_creds_token != "" &&
-      var.argocd_repo_creds_url != ""
+      var.argocd_repo_creds_token != ""
     )
-    error_message = "When enable_argocd_repo_creds=true, set argocd_repo_creds_url, argocd_repo_creds_username, and argocd_repo_creds_token."
+    error_message = "When enable_argocd_repo_creds=true, set argocd_repo_creds_username and argocd_repo_creds_token."
   }
 }
 
@@ -28,21 +31,20 @@ resource "aws_secretsmanager_secret_version" "argocd_repo_creds_gitlab" {
 
   secret_id = aws_secretsmanager_secret.argocd_repo_creds_gitlab[0].id
   secret_string = jsonencode({
-    url      = var.argocd_repo_creds_url
     username = var.argocd_repo_creds_username
     password = var.argocd_repo_creds_token
     type     = "git"
   })
 }
 
-resource "kubernetes_manifest" "argocd_repo_creds_external_secret" {
-  count = var.enable_argocd_repo_creds ? 1 : 0
+resource "kubernetes_manifest" "argocd_repository_external_secret" {
+  for_each = var.enable_argocd_repo_creds ? local.argocd_repository_urls : {}
 
   manifest = {
     apiVersion = "external-secrets.io/v1beta1"
     kind       = "ExternalSecret"
     metadata = {
-      name      = "repo-creds-gitlab-tamacoach"
+      name      = "repo-${each.key}-gitlab-tamacoach"
       namespace = var.argocd_namespace
       annotations = {
         "tamacoach.io/project"    = local.common_tags["Project"]
@@ -57,17 +59,17 @@ resource "kubernetes_manifest" "argocd_repo_creds_external_secret" {
         name = local.eso_store_name
       }
       target = {
-        name           = "repo-creds-gitlab-tamacoach"
+        name           = "repo-${each.key}-gitlab-tamacoach"
         creationPolicy = "Owner"
         template = {
           metadata = {
             labels = {
-              "argocd.argoproj.io/secret-type" = "repo-creds"
+              "argocd.argoproj.io/secret-type" = "repository"
             }
           }
           type = "Opaque"
           data = {
-            url      = "{{ .url }}"
+            url      = each.value
             username = "{{ .username }}"
             password = "{{ .password }}"
             type     = "{{ .type }}"
@@ -75,13 +77,6 @@ resource "kubernetes_manifest" "argocd_repo_creds_external_secret" {
         }
       }
       data = [
-        {
-          secretKey = "url"
-          remoteRef = {
-            key      = aws_secretsmanager_secret.argocd_repo_creds_gitlab[0].name
-            property = "url"
-          }
-        },
         {
           secretKey = "username"
           remoteRef = {
