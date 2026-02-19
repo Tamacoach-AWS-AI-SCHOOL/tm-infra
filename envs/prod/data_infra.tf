@@ -5,8 +5,7 @@ locals {
       db_multi_az       = true
     }
   }
-  backend_db_name     = "tamacoach"
-  backend_db_username = "tamacoach_app"
+  backend_db_name = "tamacoach"
 }
 
 data "aws_vpc" "tamacoach_shared" {
@@ -43,7 +42,7 @@ resource "aws_db_instance" "tamacoach_backend" {
   allocated_storage         = 100
   max_allocated_storage     = 500
   db_name                   = local.backend_db_name
-  username                  = local.backend_db_username
+  username                  = var.backend_db_username
   password                  = var.backend_db_password
   port                      = 5432
   multi_az                  = each.value.db_multi_az
@@ -113,7 +112,7 @@ resource "aws_secretsmanager_secret_version" "tamacoach_backend" {
   secret_string = jsonencode({
     host       = aws_db_instance.tamacoach_backend[each.key].address
     dbname     = local.backend_db_name
-    username   = local.backend_db_username
+    username   = var.backend_db_username
     password   = var.backend_db_password
     port       = 5432
     APP_ENV    = each.key
