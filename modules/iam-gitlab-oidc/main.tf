@@ -199,6 +199,7 @@ data "aws_iam_policy_document" "plan_permissions" {
       "iam:Get*",
       "iam:List*",
       "rds:Describe*",
+      "rds:ListTagsForResource",
       "acm:DescribeCertificate",
       "acm:GetCertificate",
       "acm:ListCertificates",
@@ -342,6 +343,7 @@ data "aws_iam_policy_document" "apply_permissions" {
       "rds:AddTagsToResource",
       "rds:RemoveTagsFromResource",
       "rds:Describe*",
+      "rds:ListTagsForResource",
     ]
     resources = ["*"]
   }
