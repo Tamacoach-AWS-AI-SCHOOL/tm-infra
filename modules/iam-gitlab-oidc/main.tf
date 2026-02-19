@@ -317,6 +317,7 @@ data "aws_iam_policy_document" "apply_permissions" {
       "ecr:UntagResource",
       "secretsmanager:CreateSecret",
       "secretsmanager:UpdateSecret",
+      "secretsmanager:PutSecretValue",
       "secretsmanager:DeleteSecret",
       "secretsmanager:TagResource",
       "secretsmanager:UntagResource",
