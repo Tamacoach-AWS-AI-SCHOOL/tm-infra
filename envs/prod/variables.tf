@@ -251,6 +251,12 @@ variable "argocd_controller_serviceaccount" {
   default     = "argocd-application-controller"
 }
 
+variable "argocd_controller_sa_name" {
+  type        = string
+  description = "Optional override for ArgoCD Application Controller service account name."
+  default     = ""
+}
+
 variable "argocd_project_source_repos" {
   type        = list(string)
   description = "Allowed Git repositories for ArgoCD AppProject sourceRepos."
