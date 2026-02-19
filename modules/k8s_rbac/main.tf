@@ -87,26 +87,4 @@ resource "kubernetes_role_binding" "platform_ops_apps_view_prod" {
 }
 
 # tama:argocd-deployer is for ArgoCD UI/API sync trigger, not Kubernetes write.
-# Intentionally no write RoleBinding is created for this group.
-
-resource "kubernetes_role_binding" "argocd_controller_apps_write_prod" {
-  count = var.enable_rbac && local.is_prod ? 1 : 0
-
-  metadata {
-    name      = "tama-argocd-controller-apps-edit-prod"
-    namespace = var.namespaces.apps
-  }
-
-  role_ref {
-    api_group = "rbac.authorization.k8s.io"
-    kind      = "ClusterRole"
-    name      = "edit"
-  }
-
-  subject {
-    kind      = "ServiceAccount"
-    name      = var.argocd.controller_serviceaccount
-    namespace = var.argocd.controller_namespace
-  }
-}
-
+# Prod apps namespace write is intentionally managed in envs/prod/rbac.tf.
