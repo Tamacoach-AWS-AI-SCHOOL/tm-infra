@@ -78,6 +78,11 @@ output "apigw_certificate_arn" {
   value       = aws_acm_certificate_validation.tamacoach_shared_apigw.certificate_arn
 }
 
+output "argocd_certificate_arn" {
+  description = "ACM certificate ARN for ArgoCD (argocd/argocd-dev.tamacoach.net) in ap-northeast-2."
+  value       = aws_acm_certificate_validation.tamacoach_shared_argocd.certificate_arn
+}
+
 output "front_bucket_name" {
   description = "S3 bucket name for static frontend hosting."
   value       = aws_s3_bucket.tamacoach_shared_front_static.bucket

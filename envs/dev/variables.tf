@@ -263,6 +263,30 @@ variable "argocd_project_source_repos" {
   default     = ["https://github.com/tamacoach/tm-infra.git"]
 }
 
+variable "argocd_domain_name" {
+  type        = string
+  description = "FQDN exposed by ArgoCD ingress."
+  default     = "argocd-dev.tamacoach.net"
+}
+
+variable "argocd_acm_certificate_arn" {
+  type        = string
+  description = "ACM certificate ARN for ArgoCD ingress HTTPS listener."
+  default     = ""
+}
+
+variable "argocd_ingress_scheme" {
+  type        = string
+  description = "ALB ingress scheme for ArgoCD."
+  default     = "internet-facing"
+}
+
+variable "argocd_ingress_allowed_cidrs" {
+  type        = list(string)
+  description = "Allowed client CIDRs for ArgoCD ingress."
+  default     = ["118.218.200.33/32", "210.126.10.241/32"]
+}
+
 variable "enable_jump_host" {
   type        = bool
   description = "Enable SSM-based jump host in private subnet."
