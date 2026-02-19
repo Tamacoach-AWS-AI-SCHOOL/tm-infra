@@ -287,6 +287,8 @@ data "aws_iam_policy_document" "apply_permissions" {
       "iam:Detach*",
       "iam:Put*",
       "iam:Remove*",
+      "iam:TagPolicy",
+      "iam:UntagPolicy",
       "iam:PassRole",
       "logs:Create*",
       "logs:PutRetentionPolicy",
