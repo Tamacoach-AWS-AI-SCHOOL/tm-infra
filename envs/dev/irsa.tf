@@ -73,7 +73,7 @@ locals {
     {
       namespace          = "apps"
       name               = "backend-sa"
-      policy_arns        = []
+      policy_arns        = [aws_iam_policy.tamacoach_backend_data["dev"].arn]
       inline_policy_json = local.backend_irsa_inline_policy
       create_namespace   = true
       tags               = {}
