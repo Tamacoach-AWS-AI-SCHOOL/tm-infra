@@ -28,25 +28,25 @@ workflow:
 
 .assume_oidc: &assume_oidc
   - |
-    if [ -z "${AWS_ROLE_ARN:-}" ]; then
-      echo "AWS_ROLE_ARN is required"
-      exit 1
-    fi
-    if [ -z "${GITLAB_OIDC_TOKEN:-}" ]; then
-      echo "GITLAB_OIDC_TOKEN is required"
-      exit 1
-    fi
-    echo "${GITLAB_OIDC_TOKEN}" | cut -d. -f2 | base64 -d 2>/dev/null | jq -r '"oidc iss=\(.iss) aud=\(.aud) sub=\(.sub)"'
-
-    CREDS_JSON=$(aws sts assume-role-with-web-identity \
+    echo "Starting AWS STS AssumeRole..."
+    # 1. 임시 파일에 권한 정보 저장
+    aws sts assume-role-with-web-identity \
       --role-arn "${AWS_ROLE_ARN}" \
       --role-session-name "gitlab-${CI_PROJECT_ID}-${CI_JOB_ID}" \
       --web-identity-token "${GITLAB_OIDC_TOKEN}" \
-      --duration-seconds 3600)
+      --duration-seconds 3600 \
+      --region ap-northeast-2 \
+      --output json > sts_creds.json
 
-    export AWS_ACCESS_KEY_ID=$(echo "${CREDS_JSON}" | jq -r '.Credentials.AccessKeyId')
-    export AWS_SECRET_ACCESS_KEY=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SecretAccessKey')
-    export AWS_SESSION_TOKEN=$(echo "${CREDS_JSON}" | jq -r '.Credentials.SessionToken')
+    # 2. JSON에서 값을 추출하여 환경 변수로 등록 (테라폼이 이걸 보고 움직입니다)
+    export AWS_ACCESS_KEY_ID=$(jq -r '.Credentials.AccessKeyId' sts_creds.json)
+    export AWS_SECRET_ACCESS_KEY=$(jq -r '.Credentials.SecretAccessKey' sts_creds.json)
+    export AWS_SESSION_TOKEN=$(jq -r '.Credentials.SessionToken' sts_creds.json)
+    
+    # 3. 보안을 위해 임시 파일 삭제
+    rm sts_creds.json
+    
+    echo "Credentials successfully exported. Ready for Terraform."
     aws sts get-caller-identity
 
 fmt:
@@ -83,6 +83,7 @@ validate:
   artifacts:
     paths:
       - "envs/${TF_ENV}/tfplan"
+      - "envs/${TF_ENV}/lambda/**/*.zip"
     expire_in: 1 day
 
 plan:shared:
@@ -128,7 +129,7 @@ plan:prod:
     - test -f "envs/${TF_ENV}/terraform.tfvars" || (echo "missing envs/${TF_ENV}/terraform.tfvars"; exit 1)
     - terraform -chdir="envs/${TF_ENV}" init -reconfigure -backend-config="backend.hcl"
     - terraform -chdir="envs/${TF_ENV}" show -no-color tfplan | sed -n '1,200p'
-    - terraform -chdir="envs/${TF_ENV}" apply -var-file="terraform.tfvars" -auto-approve tfplan
+    - terraform -chdir="envs/${TF_ENV}" apply -auto-approve tfplan
   rules:
     - when: never
 

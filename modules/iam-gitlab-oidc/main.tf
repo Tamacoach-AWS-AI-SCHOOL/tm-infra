@@ -197,12 +197,24 @@ data "aws_iam_policy_document" "plan_permissions" {
       "secretsmanager:GetSecretValue",
       "iam:Get*",
       "iam:List*",
+      "acm:DescribeCertificate",
+      "acm:GetCertificate",
+      "acm:ListCertificates",
+      "acm:ListTagsForCertificate",
+      "cloudfront:GetDistribution",
+      "cloudfront:GetDistributionConfig",
+      "cloudfront:GetFunction",
+      "cloudfront:DescribeFunction",
+      "cloudfront:GetOriginAccessControl",
+      "cloudfront:ListOriginAccessControls",
+      "cloudfront:ListTagsForResource",
       "route53:Get*",
       "route53:List*",
+      "apigateway:GET",
+      "lambda:Get*",
+      "lambda:List*",
       "eks:ListTagsForResource",
-      "s3:GetBucketTagging",
-      "s3:GetBucketVersioning",
-      "s3:GetEncryptionConfiguration",
+      "s3:*",
     ]
     resources = ["*"]
   }
@@ -221,6 +233,22 @@ resource "aws_iam_role_policy_attachment" "plan_attach" {
 
 data "aws_iam_policy_document" "apply_permissions" {
   statement {
+    sid    = "TerraformInfrastructureManagement"
+    effect = "Allow"
+    actions = [
+      "acm:*",
+      "route53:*",
+      "cloudfront:*",
+      "s3:*",
+      "apigateway:*",
+      "lambda:*",
+      "iam:PassRole",
+      "iam:GetRole",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid    = "ApplyMutationsByServiceScope"
     effect = "Allow"
     actions = [
@@ -233,6 +261,7 @@ data "aws_iam_policy_document" "apply_permissions" {
       "ec2:Detach*",
       "ec2:AuthorizeSecurityGroup*",
       "ec2:RevokeSecurityGroup*",
+      "ec2:GetSecurityGroupsForVpc",
       "ec2:RunInstances",
       "ec2:TerminateInstances",
       "eks:Create*",
@@ -259,12 +288,28 @@ data "aws_iam_policy_document" "apply_permissions" {
       "logs:Create*",
       "logs:PutRetentionPolicy",
       "logs:Delete*",
+      "logs:TagResource",
+      "logs:UntagResource",
+      "acm:RequestCertificate",
+      "acm:DeleteCertificate",
+      "acm:AddTagsToCertificate",
+      "acm:RemoveTagsFromCertificate",
       "route53:ChangeResourceRecordSets",
       "route53:Create*",
       "route53:Delete*",
       "ssm:PutParameter",
       "ssm:DeleteParameter",
       "ssm:DeleteParameters",
+      "ssm:AddTagsToResource",
+      "ssm:RemoveTagsFromResource",
+      "ecr:CreateRepository",
+      "ecr:DeleteRepository",
+      "ecr:PutImageTagMutability",
+      "ecr:PutImageScanningConfiguration",
+      "ecr:PutLifecyclePolicy",
+      "ecr:SetRepositoryPolicy",
+      "ecr:TagResource",
+      "ecr:UntagResource",
       "secretsmanager:CreateSecret",
       "secretsmanager:UpdateSecret",
       "secretsmanager:DeleteSecret",
