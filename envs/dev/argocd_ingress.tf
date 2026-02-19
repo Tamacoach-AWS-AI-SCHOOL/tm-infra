@@ -9,6 +9,14 @@ data "aws_route53_zone" "tamacoach_net_argocd" {
   private_zone = false
 }
 
+data "aws_ssm_parameter" "argocd_public_subnet_ids" {
+  name = "${local.ssm_shared_network_prefix}/public_subnet_ids"
+}
+
+locals {
+  argocd_ingress_subnet_ids = nonsensitive(jsondecode(data.aws_ssm_parameter.argocd_public_subnet_ids.value))
+}
+
 check "argocd_ingress_cert_arn_required" {
   assert {
     condition     = local.argocd_acm_certificate_arn_ref != ""
@@ -29,6 +37,7 @@ resource "kubernetes_ingress_v1" "argocd_ingress" {
       "alb.ingress.kubernetes.io/certificate-arn" = local.argocd_acm_certificate_arn_ref
       "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
       "alb.ingress.kubernetes.io/inbound-cidrs"   = join(",", var.argocd_ingress_allowed_cidrs)
+      "alb.ingress.kubernetes.io/subnets"         = join(",", local.argocd_ingress_subnet_ids)
     }
   }
 
