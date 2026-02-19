@@ -3,6 +3,11 @@ env        = "prod"
 owner      = "team-a"
 aws_region = "ap-northeast-2"
 
+argocd_project_source_repos = [
+  "https://gitlab.tamacoach.net/tamacoach/tm-manifest.git",
+  "https://gitlab.tamacoach.net/tamacoach/tm-backend.git",
+]
+
 enable_irsa           = true
 enable_access_entries = true
 enable_rbac           = true
