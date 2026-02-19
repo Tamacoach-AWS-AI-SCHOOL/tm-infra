@@ -1,6 +1,7 @@
 locals {
   argocd_ingress_name            = "argocd-${var.env}-${var.project}"
   argocd_acm_certificate_arn_ref = var.argocd_acm_certificate_arn != "" ? var.argocd_acm_certificate_arn : try(data.terraform_remote_state.network.outputs.argocd_certificate_arn, "")
+  argocd_ingress_hostname        = try(kubernetes_ingress_v1.argocd_ingress.status[0].load_balancer[0].ingress[0].hostname, null)
 }
 
 data "aws_route53_zone" "tamacoach_net_argocd" {
@@ -62,11 +63,13 @@ resource "kubernetes_ingress_v1" "argocd_ingress" {
 }
 
 resource "aws_route53_record" "argocd_cname" {
+  for_each = local.argocd_ingress_hostname == null ? {} : { main = local.argocd_ingress_hostname }
+
   zone_id = data.aws_route53_zone.tamacoach_net_argocd.zone_id
   name    = var.argocd_domain_name
   type    = "CNAME"
   ttl     = 300
   records = [
-    kubernetes_ingress_v1.argocd_ingress.status[0].load_balancer[0].ingress[0].hostname,
+    each.value,
   ]
 }
