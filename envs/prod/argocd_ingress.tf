@@ -15,61 +15,49 @@ check "argocd_ingress_cert_arn_required" {
   }
 }
 
-resource "kubernetes_manifest" "argocd_ingress" {
-  manifest = {
-    apiVersion = "networking.k8s.io/v1"
-    kind       = "Ingress"
-    metadata = {
-      name      = local.argocd_ingress_name
-      namespace = var.argocd_namespace
-      annotations = {
-        "alb.ingress.kubernetes.io/scheme"          = var.argocd_ingress_scheme
-        "alb.ingress.kubernetes.io/target-type"     = "ip"
-        "alb.ingress.kubernetes.io/listen-ports"    = "[{\"HTTPS\":443}]"
-        "alb.ingress.kubernetes.io/certificate-arn" = local.argocd_acm_certificate_arn_ref
-        "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
-        "alb.ingress.kubernetes.io/inbound-cidrs"   = join(",", var.argocd_ingress_allowed_cidrs)
-      }
+resource "kubernetes_ingress_v1" "argocd_ingress" {
+  wait_for_load_balancer = true
+
+  metadata {
+    name      = local.argocd_ingress_name
+    namespace = var.argocd_namespace
+    annotations = {
+      "alb.ingress.kubernetes.io/scheme"          = var.argocd_ingress_scheme
+      "alb.ingress.kubernetes.io/target-type"     = "ip"
+      "alb.ingress.kubernetes.io/listen-ports"    = "[{\"HTTPS\":443}]"
+      "alb.ingress.kubernetes.io/certificate-arn" = local.argocd_acm_certificate_arn_ref
+      "alb.ingress.kubernetes.io/ssl-redirect"    = "443"
+      "alb.ingress.kubernetes.io/inbound-cidrs"   = join(",", var.argocd_ingress_allowed_cidrs)
     }
-    spec = {
-      ingressClassName = "alb"
-      rules = [
-        {
-          host = var.argocd_domain_name
-          http = {
-            paths = [
-              {
-                path     = "/"
-                pathType = "Prefix"
-                backend = {
-                  service = {
-                    name = "argocd-server"
-                    port = {
-                      number = 80
-                    }
-                  }
-                }
+  }
+
+  spec {
+    ingress_class_name = "alb"
+
+    rule {
+      host = var.argocd_domain_name
+
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+
+          backend {
+            service {
+              name = "argocd-server"
+
+              port {
+                number = 80
               }
-            ]
+            }
           }
         }
-      ]
+      }
     }
   }
 
   depends_on = [
     helm_release.argocd,
-  ]
-}
-
-data "kubernetes_ingress_v1" "argocd_ingress" {
-  metadata {
-    name      = local.argocd_ingress_name
-    namespace = var.argocd_namespace
-  }
-
-  depends_on = [
-    kubernetes_manifest.argocd_ingress,
   ]
 }
 
@@ -79,6 +67,6 @@ resource "aws_route53_record" "argocd_cname" {
   type    = "CNAME"
   ttl     = 300
   records = [
-    data.kubernetes_ingress_v1.argocd_ingress.status[0].load_balancer[0].ingress[0].hostname,
+    kubernetes_ingress_v1.argocd_ingress.status[0].load_balancer[0].ingress[0].hostname,
   ]
 }
