@@ -32,6 +32,18 @@ resource "kubernetes_role" "argocd_apps_writer" {
     verbs      = ["get", "list", "watch", "create", "update", "patch", "delete"]
   }
 
+  rule {
+    api_groups = ["external-secrets.io"]
+    resources  = ["externalsecrets"]
+    verbs      = ["get", "list", "watch", "create", "update", "patch", "delete"]
+  }
+
+  rule {
+    api_groups = ["elbv2.k8s.aws"]
+    resources  = ["targetgroupbindings"]
+    verbs      = ["get", "list", "watch", "create", "update", "patch", "delete"]
+  }
+
   depends_on = [
     module.eks,
     helm_release.argocd,

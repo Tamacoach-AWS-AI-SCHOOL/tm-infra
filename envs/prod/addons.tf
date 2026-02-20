@@ -355,6 +355,10 @@ resource "kubernetes_manifest" "argocd_appproject_prod" {
         {
           namespace = var.apps_namespace
           server    = "https://kubernetes.default.svc"
+        },
+        {
+          namespace = var.argocd_namespace
+          server    = "https://kubernetes.default.svc"
         }
       ]
       clusterResourceWhitelist = []
@@ -394,6 +398,22 @@ resource "kubernetes_manifest" "argocd_appproject_prod" {
         {
           group = "apps"
           kind  = "StatefulSet"
+        },
+        {
+          group = "autoscaling"
+          kind  = "HorizontalPodAutoscaler"
+        },
+        {
+          group = "argoproj.io"
+          kind  = "Application"
+        },
+        {
+          group = "external-secrets.io"
+          kind  = "ExternalSecret"
+        },
+        {
+          group = "elbv2.k8s.aws"
+          kind  = "TargetGroupBinding"
         }
       ]
       roles = [
