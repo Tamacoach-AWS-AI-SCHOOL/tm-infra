@@ -24,9 +24,10 @@ jump_host_instance_type         = "t3.small"
 jump_host_install_helm          = false
 jump_host_kubectl_version       = "1.30.0"
 
-# 필요 시만 설정
-backend_queue_arns = []
-worker_queue_arns  = []
+# worker IRSA SQS consume 권한 대상
+# 필요 시 backend_queue_arns도 송신 대상 큐 ARN으로 채우세요.
+backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
 
 # prod 접근 주체로 교체해서 사용
 access_entries = [
