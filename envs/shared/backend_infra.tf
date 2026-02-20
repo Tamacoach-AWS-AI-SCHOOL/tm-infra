@@ -39,6 +39,11 @@ data "aws_subnet" "tamacoach_backend_prod" {
   id       = each.value
 }
 
+data "aws_eks_cluster" "tamacoach_backend" {
+  for_each = local.backend_envs
+  name     = "eks-${each.key}"
+}
+
 resource "aws_ecr_repository" "tamacoach_shared_backend" {
   name                 = "${local.name_prefix}-backend"
   image_tag_mutability = "IMMUTABLE"
@@ -382,10 +387,21 @@ resource "aws_ssm_parameter" "tamacoach_backend_target_group_arn" {
 resource "aws_vpc_security_group_ingress_rule" "tamacoach_shared_backend_nodes_from_nlb" {
   for_each = local.backend_envs
 
-  security_group_id            = each.key == "dev" ? module.network.sg_ids["eks_dev"] : module.network.sg_ids["eks_prod"]
+  security_group_id            = data.aws_eks_cluster.tamacoach_backend[each.key].vpc_config[0].cluster_security_group_id
   ip_protocol                  = "tcp"
   from_port                    = 8000
   to_port                      = 8000
   referenced_security_group_id = aws_security_group.tamacoach_shared_backend_nlb[each.key].id
   description                  = "Allow traffic from internal NLB (${each.key}) to backend pods on 8000"
+}
+
+resource "aws_vpc_security_group_egress_rule" "tamacoach_shared_backend_nlb_to_nodes_8000" {
+  for_each = local.backend_envs
+
+  security_group_id            = aws_security_group.tamacoach_shared_backend_nlb[each.key].id
+  ip_protocol                  = "tcp"
+  from_port                    = 8000
+  to_port                      = 8000
+  referenced_security_group_id = data.aws_eks_cluster.tamacoach_backend[each.key].vpc_config[0].cluster_security_group_id
+  description                  = "Allow internal NLB (${each.key}) to EKS cluster SG on 8000"
 }
