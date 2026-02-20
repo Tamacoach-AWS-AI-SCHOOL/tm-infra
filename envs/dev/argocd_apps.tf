@@ -1,12 +1,9 @@
 locals {
-  argocd_dev_app_name            = "apps-${var.env}-${var.project}"
+  argocd_dev_app_name            = "root-${var.env}-${var.project}"
   argocd_dev_app_project         = "dev"
-  argocd_dev_values_repo_url     = var.argocd_project_source_repos[0]
-  argocd_dev_values_target_rev   = "develop"
-  argocd_dev_helm_repo_url       = var.argocd_project_source_repos[2]
-  argocd_dev_helm_target_rev     = "main"
-  argocd_dev_helm_chart_path     = "charts/tm-app"
-  argocd_dev_helm_values_refpath = "$values/env/dev/values.yaml"
+  argocd_dev_manifest_repo_url   = var.argocd_project_source_repos[0]
+  argocd_dev_manifest_target_rev = "develop"
+  argocd_dev_manifest_path       = "apps/dev"
 }
 
 resource "kubernetes_manifest" "argocd_application_dev" {
@@ -24,24 +21,14 @@ resource "kubernetes_manifest" "argocd_application_dev" {
     }
     spec = {
       project = local.argocd_dev_app_project
-      sources = [
-        {
-          repoURL        = local.argocd_dev_helm_repo_url
-          targetRevision = local.argocd_dev_helm_target_rev
-          path           = local.argocd_dev_helm_chart_path
-          helm = {
-            valueFiles = [local.argocd_dev_helm_values_refpath]
-          }
-        },
-        {
-          repoURL        = local.argocd_dev_values_repo_url
-          targetRevision = local.argocd_dev_values_target_rev
-          ref            = "values"
-        },
-      ]
+      source = {
+        repoURL        = local.argocd_dev_manifest_repo_url
+        targetRevision = local.argocd_dev_manifest_target_rev
+        path           = local.argocd_dev_manifest_path
+      }
       destination = {
         server    = "https://kubernetes.default.svc"
-        namespace = var.apps_namespace
+        namespace = var.argocd_namespace
       }
       syncPolicy = {
         automated = {
