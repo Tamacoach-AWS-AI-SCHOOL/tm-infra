@@ -38,8 +38,8 @@ resource "aws_cognito_user_pool" "dev" {
 resource "aws_cognito_user_pool_client" "dev" {
   count = var.cognito_create_dev ? 1 : 0
 
-  name         = var.cognito_dev_user_pool_client_name
-  user_pool_id = aws_cognito_user_pool.dev[0].id
+  name            = var.cognito_dev_user_pool_client_name
+  user_pool_id    = aws_cognito_user_pool.dev[0].id
   generate_secret = true
 
   explicit_auth_flows = [
