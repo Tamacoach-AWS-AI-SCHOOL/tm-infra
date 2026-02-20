@@ -43,6 +43,25 @@ function handler(event) {
     var uri = request.uri;
     var host = request.headers.host.value;
 
+    // 0. API 요청은 도메인별 API origin 경로로 라우팅
+    if (uri === "/api" || uri.startsWith("/api/")) {
+        var apiSuffix = uri.substring(4); // remove "/api"
+        if (apiSuffix === "") {
+            apiSuffix = "/";
+        }
+        if (host === "stage.tamacoach.net") {
+            request.uri = "/stage-api" + apiSuffix;
+        } else {
+            request.uri = "/prod-api" + apiSuffix;
+        }
+        return request;
+    }
+
+    // API origin으로 전달될 경로는 SPA rewrite 대상에서 제외
+    if (uri.startsWith("/stage-api") || uri.startsWith("/prod-api")) {
+        return request;
+    }
+
     // 1. 도메인에 따른 환경(Prefix) 결정
     var prefix = "/prod";
     if (host === "stage.tamacoach.net") {
@@ -89,6 +108,74 @@ resource "aws_cloudfront_distribution" "tamacoach_shared_front_static" {
     domain_name              = aws_s3_bucket.tamacoach_shared_front_static.bucket_regional_domain_name
     origin_id                = "s3-${aws_s3_bucket.tamacoach_shared_front_static.id}"
     origin_access_control_id = aws_cloudfront_origin_access_control.tamacoach_shared_front_static.id
+  }
+
+  origin {
+    domain_name = "api-stage.tamacoach.net"
+    origin_id   = "api-stage-origin"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  origin {
+    domain_name = "api.tamacoach.net"
+    origin_id   = "api-prod-origin"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "/stage-api/*"
+    target_origin_id = "api-stage-origin"
+
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    compress               = true
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies {
+        forward = "all"
+      }
+    }
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "/prod-api/*"
+    target_origin_id = "api-prod-origin"
+
+    viewer_protocol_policy = "redirect-to-https"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    compress               = true
+
+    min_ttl     = 0
+    default_ttl = 0
+    max_ttl     = 0
+
+    forwarded_values {
+      query_string = true
+      headers      = ["*"]
+      cookies {
+        forward = "all"
+      }
+    }
   }
 
   default_cache_behavior {
