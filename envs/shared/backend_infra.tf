@@ -135,6 +135,7 @@ resource "aws_lb_target_group" "tamacoach_shared_backend" {
     protocol            = "HTTP"
     path                = "/health"
     port                = "8000"
+    matcher             = "200-399"
     healthy_threshold   = 3
     unhealthy_threshold = 3
     timeout             = 5
