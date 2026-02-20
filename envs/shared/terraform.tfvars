@@ -56,5 +56,5 @@ gitlab_role_name_prefix_shared = "tamacoach-shared"
 gitlab_role_name_prefix_dev    = "tamacoach-dev"
 gitlab_role_name_prefix_prod   = "tamacoach-prod"
 
-cognito_create_dev = true
+cognito_create_dev           = true
 cognito_manage_prod_existing = true
