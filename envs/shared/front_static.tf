@@ -46,6 +46,9 @@ function handler(event) {
     // 0. API 요청은 도메인별 API origin 경로로 라우팅
     if (uri === "/api" || uri.startsWith("/api/")) {
         var apiSuffix = uri.substring(4); // remove "/api"
+        if (apiSuffix === "") {
+            apiSuffix = "/";
+        }
         if (host === "stage.tamacoach.net") {
             request.uri = "/stage-api" + apiSuffix;
         } else {
