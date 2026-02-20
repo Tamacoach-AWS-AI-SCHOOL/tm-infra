@@ -228,3 +228,39 @@ variable "front_alias_name" {
   description = "Alias domain for frontend CloudFront distribution."
   default     = "tamacoach.net"
 }
+
+variable "cognito_manage_prod_existing" {
+  type        = bool
+  description = "Manage existing prod Cognito resources via Terraform (import required before apply)."
+  default     = false
+}
+
+variable "cognito_create_dev" {
+  type        = bool
+  description = "Create dev Cognito user pool and app client."
+  default     = false
+}
+
+variable "cognito_prod_user_pool_name" {
+  type        = string
+  description = "Prod Cognito user pool name (existing resource)."
+  default     = "User pool - tamacoach"
+}
+
+variable "cognito_prod_user_pool_client_name" {
+  type        = string
+  description = "Prod Cognito app client name (existing resource)."
+  default     = "TamacoachAppClient"
+}
+
+variable "cognito_dev_user_pool_name" {
+  type        = string
+  description = "Dev Cognito user pool name."
+  default     = "User pool - tamacoach-dev"
+}
+
+variable "cognito_dev_user_pool_client_name" {
+  type        = string
+  description = "Dev Cognito app client name."
+  default     = "TamacoachAppClientDev"
+}
