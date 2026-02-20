@@ -3,7 +3,7 @@ locals {
   argocd_prod_app_project         = "prod"
   argocd_prod_manifest_repo_url   = var.argocd_project_source_repos[0]
   argocd_prod_manifest_target_rev = "main"
-  argocd_prod_manifest_path       = "env/prod"
+  argocd_prod_manifest_path       = "apps/prod"
 }
 
 resource "kubernetes_manifest" "argocd_application_prod" {
