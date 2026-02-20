@@ -43,22 +43,8 @@ function handler(event) {
     var uri = request.uri;
     var host = request.headers.host.value;
 
-    // 0. API 요청은 도메인별 API origin 경로로 라우팅
+    // API 요청은 CloudFront API behavior로 전달하고 SPA rewrite에서 제외
     if (uri === "/api" || uri.startsWith("/api/")) {
-        var apiSuffix = uri.substring(4); // remove "/api"
-        if (apiSuffix === "") {
-            apiSuffix = "/";
-        }
-        if (host === "stage.tamacoach.net") {
-            request.uri = "/stage-api" + apiSuffix;
-        } else {
-            request.uri = "/prod-api" + apiSuffix;
-        }
-        return request;
-    }
-
-    // API origin으로 전달될 경로는 SPA rewrite 대상에서 제외
-    if (uri.startsWith("/stage-api") || uri.startsWith("/prod-api")) {
         return request;
     }
 
@@ -135,29 +121,8 @@ resource "aws_cloudfront_distribution" "tamacoach_shared_front_static" {
   }
 
   ordered_cache_behavior {
-    path_pattern     = "/stage-api/*"
-    target_origin_id = "api-stage-origin"
-
-    viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-    cached_methods         = ["GET", "HEAD", "OPTIONS"]
-    compress               = true
-
-    min_ttl     = 0
-    default_ttl = 0
-    max_ttl     = 0
-
-    forwarded_values {
-      query_string = true
-      headers      = ["*"]
-      cookies {
-        forward = "all"
-      }
-    }
-  }
-
-  ordered_cache_behavior {
-    path_pattern     = "/prod-api/*"
+    # /api requests are routed to an API origin, and Lambda@Edge picks stage/prod by Host.
+    path_pattern     = "/api*"
     target_origin_id = "api-prod-origin"
 
     viewer_protocol_policy = "redirect-to-https"
@@ -175,6 +140,12 @@ resource "aws_cloudfront_distribution" "tamacoach_shared_front_static" {
       cookies {
         forward = "all"
       }
+    }
+
+    lambda_function_association {
+      event_type   = "origin-request"
+      lambda_arn   = aws_lambda_function.tamacoach_shared_front_api_origin_router.qualified_arn
+      include_body = false
     }
   }
 
@@ -212,6 +183,55 @@ resource "aws_cloudfront_distribution" "tamacoach_shared_front_static" {
   }
 
   tags = local.common_tags
+}
+
+data "archive_file" "tamacoach_shared_front_api_origin_router" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/front_api_origin_router/index.js"
+  output_path = "${path.module}/lambda/front_api_origin_router/index.zip"
+}
+
+resource "aws_iam_role" "tamacoach_shared_front_api_origin_router" {
+  provider = aws.us_east_1
+  name     = "${local.name_prefix}-front-api-origin-router-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = ["lambda.amazonaws.com", "edgelambda.amazonaws.com"]
+      }
+    }]
+  })
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-front-api-origin-router-role"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "tamacoach_shared_front_api_origin_router_basic" {
+  provider   = aws.us_east_1
+  role       = aws_iam_role.tamacoach_shared_front_api_origin_router.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_function" "tamacoach_shared_front_api_origin_router" {
+  provider         = aws.us_east_1
+  function_name    = "${local.name_prefix}-front-api-origin-router"
+  role             = aws_iam_role.tamacoach_shared_front_api_origin_router.arn
+  handler          = "index.handler"
+  runtime          = "nodejs18.x"
+  filename         = data.archive_file.tamacoach_shared_front_api_origin_router.output_path
+  source_code_hash = data.archive_file.tamacoach_shared_front_api_origin_router.output_base64sha256
+  publish          = true
+  timeout          = 5
+
+  tags = merge(local.common_tags, {
+    Name = "${local.name_prefix}-front-api-origin-router"
+  })
+
+  depends_on = [aws_iam_role_policy_attachment.tamacoach_shared_front_api_origin_router_basic]
 }
 
 resource "aws_s3_bucket_policy" "tamacoach_shared_front_static" {
