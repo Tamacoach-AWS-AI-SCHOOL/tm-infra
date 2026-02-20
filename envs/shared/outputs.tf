@@ -97,3 +97,29 @@ output "front_cloudfront_distribution_domain_name" {
   description = "CloudFront domain name for static frontend."
   value       = aws_cloudfront_distribution.tamacoach_shared_front_static.domain_name
 }
+
+output "cognito_prod_user_pool_id" {
+  description = "Prod Cognito user pool ID (managed/imported when enabled)."
+  value       = try(aws_cognito_user_pool.prod[0].id, null)
+}
+
+output "cognito_prod_user_pool_client_id" {
+  description = "Prod Cognito app client ID (managed/imported when enabled)."
+  value       = try(aws_cognito_user_pool_client.prod[0].id, null)
+}
+
+output "cognito_dev_user_pool_id" {
+  description = "Dev Cognito user pool ID (created when enabled)."
+  value       = try(aws_cognito_user_pool.dev[0].id, null)
+}
+
+output "cognito_dev_user_pool_client_id" {
+  description = "Dev Cognito app client ID (created when enabled)."
+  value       = try(aws_cognito_user_pool_client.dev[0].id, null)
+}
+
+output "cognito_dev_user_pool_client_secret" {
+  description = "Dev Cognito app client secret (created when enabled)."
+  value       = try(aws_cognito_user_pool_client.dev[0].client_secret, null)
+  sensitive   = true
+}
