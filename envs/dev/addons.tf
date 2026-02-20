@@ -404,6 +404,10 @@ resource "kubernetes_manifest" "argocd_appproject_dev" {
           kind  = "StatefulSet"
         },
         {
+          group = "autoscaling"
+          kind  = "HorizontalPodAutoscaler"
+        },
+        {
           group = "argoproj.io"
           kind  = "Application"
         },
