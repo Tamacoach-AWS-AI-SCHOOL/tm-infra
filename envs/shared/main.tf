@@ -23,6 +23,28 @@ module "network" {
 
 data "aws_caller_identity" "current" {}
 
+locals {
+  backend_envs = toset(["dev", "prod"])
+}
+
+data "aws_eks_cluster" "backend" {
+  for_each = local.backend_envs
+  name     = "eks-${each.key}"
+}
+
+# Ensure backend pods in each EKS cluster can reach the environment RDS SG on 5432.
+# This codifies the manual hotfix (RDS SG <- EKS cluster security group).
+resource "aws_vpc_security_group_ingress_rule" "rds_from_actual_eks_cluster_db" {
+  for_each = local.backend_envs
+
+  security_group_id            = module.network.sg_ids["rds_${each.key}"]
+  referenced_security_group_id = data.aws_eks_cluster.backend[each.key].vpc_config[0].cluster_security_group_id
+  ip_protocol                  = "tcp"
+  from_port                    = var.db_port
+  to_port                      = var.db_port
+  description                  = "Allow ${each.key} EKS cluster SG to ${each.key} RDS on ${var.db_port}"
+}
+
 module "gitlab_ci_oidc_shared" {
   count  = var.enable_gitlab_oidc ? 1 : 0
   source = "../../modules/iam-gitlab-oidc"
