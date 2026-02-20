@@ -17,6 +17,11 @@ enable_adot_irsa             = false
 enable_external_secrets_irsa = false
 enable_argocd_repo_creds     = true
 
+# worker IRSA SQS consume 권한 대상
+# dev 전용 큐가 있으면 ARN을 교체하세요.
+backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+
 access_entries = [
   {
     principal_arn = "arn:aws:iam::193629269600:role/jump-dev-tamacoach-role"
