@@ -13,6 +13,7 @@ locals {
   ]
 
   addons_metrics_server_chart_version = "3.12.2"
+  addons_fluent_bit_chart_version     = "0.1.36"
   addons_aws_lbc_chart_version        = "1.11.0"
   addons_ebs_csi_chart_version        = "2.33.0"
   addons_karpenter_chart_version      = "1.0.8"
@@ -55,6 +56,47 @@ resource "helm_release" "metrics_server" {
       nodeSelector = local.addons_system_node_selector
       tolerations  = local.addons_system_tolerations
     })
+  ]
+}
+
+resource "helm_release" "aws_for_fluent_bit" {
+  count            = var.enable_fluent_bit ? 1 : 0
+  name             = "aws-for-fluent-bit"
+  repository       = "https://aws.github.io/eks-charts"
+  chart            = "aws-for-fluent-bit"
+  version          = local.addons_fluent_bit_chart_version
+  namespace        = "observability"
+  create_namespace = true
+
+  values = [
+    yamlencode({
+      serviceAccount = {
+        create = false
+        name   = "aws-for-fluent-bit"
+      }
+      cloudWatch = {
+        enabled         = true
+        region          = var.aws_region
+        logGroupName    = "${var.project}/${var.env}/eks/${local.addons_cluster_name}/application"
+        logStreamPrefix = "fluent-bit-"
+      }
+      firehose = {
+        enabled = false
+      }
+      kinesis = {
+        enabled = false
+      }
+      elasticsearch = {
+        enabled = false
+      }
+      nodeSelector = local.addons_system_node_selector
+      tolerations  = local.addons_system_tolerations
+    })
+  ]
+
+  depends_on = [
+    module.irsa,
+    aws_cloudwatch_log_group.eks_application,
   ]
 }
 
