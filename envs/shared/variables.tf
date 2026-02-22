@@ -211,6 +211,27 @@ variable "gitlab_oidc_apply_sub_patterns_prod" {
   default     = []
 }
 
+variable "enable_gitlab_app_oidc_roles" {
+  type        = bool
+  description = "Enable app CI OIDC roles for backend/frontend pipelines."
+  default     = true
+}
+
+variable "gitlab_app_project_paths" {
+  type        = list(string)
+  description = "GitLab project paths allowed to assume app CI roles."
+  default = [
+    "tamacoach/tm-backend",
+    "tamacoach/tm-frontend",
+  ]
+}
+
+variable "gitlab_app_role_name_prefix" {
+  type        = string
+  description = "Role name prefix for app CI OIDC roles."
+  default     = "tamacoach-app-ci"
+}
+
 variable "front_acm_certificate_arn" {
   type        = string
   description = "ACM certificate ARN in us-east-1 for CloudFront aliases."
