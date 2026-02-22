@@ -1,5 +1,56 @@
 data "aws_caller_identity" "current" {}
 
+data "aws_iam_policy_document" "fluent_bit_logs" {
+  statement {
+    sid    = "AllowLogGroupDiscovery"
+    effect = "Allow"
+    actions = [
+      "logs:DescribeLogGroups",
+      "logs:CreateLogGroup",
+      "logs:PutRetentionPolicy",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowWriteApplicationLogGroup"
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:DescribeLogStreams",
+      "logs:PutLogEvents",
+    ]
+    resources = [
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${var.project}/${var.env}/eks/${local.effective_cluster_name}/application",
+      "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:${var.project}/${var.env}/eks/${local.effective_cluster_name}/application:*",
+    ]
+  }
+
+  dynamic "statement" {
+    for_each = var.eks_log_kms_key_arn == null ? [] : [var.eks_log_kms_key_arn]
+    content {
+      sid    = "AllowKmsDecryptForEncryptedLogs"
+      effect = "Allow"
+      actions = [
+        "kms:Decrypt",
+        "kms:DescribeKey",
+      ]
+      resources = [statement.value]
+    }
+  }
+}
+
+resource "aws_iam_policy" "fluent_bit_logs" {
+  name   = "${local.name_prefix}-fluent-bit-logs-policy"
+  policy = data.aws_iam_policy_document.fluent_bit_logs.json
+
+  tags = merge(local.common_tags, {
+    Name    = "${local.name_prefix}-fluent-bit-logs-policy"
+    Service = "observability"
+    Env     = var.env
+  })
+}
+
 locals {
   effective_cluster_name      = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
   effective_oidc_provider_arn = var.oidc_provider_arn != "" ? var.oidc_provider_arn : module.eks.oidc_provider_arn
@@ -113,6 +164,16 @@ locals {
   ]
 
   optional_irsa_serviceaccounts = concat(
+    var.enable_fluent_bit ? [
+      {
+        namespace          = "observability"
+        name               = "aws-for-fluent-bit"
+        policy_arns        = [aws_iam_policy.fluent_bit_logs.arn]
+        inline_policy_json = null
+        create_namespace   = true
+        tags               = {}
+      }
+    ] : [],
     var.enable_adot_irsa ? [
       {
         namespace          = "observability"
@@ -157,6 +218,11 @@ check "irsa_required_policy_arns_when_enabled" {
   assert {
     condition     = !var.enable_adot_irsa || (var.enable_irsa && try(length(var.adot_policy_arns), 0) > 0)
     error_message = "When enable_adot_irsa=true, set enable_irsa=true and provide at least one adot_policy_arns value."
+  }
+
+  assert {
+    condition     = !var.enable_fluent_bit || var.enable_irsa
+    error_message = "When enable_fluent_bit=true, set enable_irsa=true."
   }
 
   assert {
