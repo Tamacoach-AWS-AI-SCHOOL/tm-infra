@@ -58,3 +58,8 @@ gitlab_role_name_prefix_prod   = "tamacoach-prod"
 
 cognito_create_dev           = true
 cognito_manage_prod_existing = true
+
+observability_sqs_queue_arns = {
+  dev  = "arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"
+  prod = "arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"
+}
