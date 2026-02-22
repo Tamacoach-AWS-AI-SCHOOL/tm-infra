@@ -68,6 +68,16 @@ output "TF_APPLY_ROLE_ARN_PROD" {
   value       = try(module.gitlab_ci_oidc_prod[0].apply_role_arn, null)
 }
 
+output "AWS_ROLE_ARN_DEV" {
+  description = "App CI OIDC role ARN for dev (develop branch)."
+  value       = try(aws_iam_role.gitlab_app_ci_dev[0].arn, null)
+}
+
+output "AWS_ROLE_ARN_PROD" {
+  description = "App CI OIDC role ARN for prod (main branch)."
+  value       = try(aws_iam_role.gitlab_app_ci_prod[0].arn, null)
+}
+
 output "cloudfront_certificate_arn" {
   description = "ACM certificate ARN for CloudFront (*.tamacoach.net, tamacoach.net) in us-east-1."
   value       = aws_acm_certificate_validation.tamacoach_shared_cloudfront.certificate_arn
