@@ -47,12 +47,6 @@ data "aws_db_instance" "observability" {
   db_instance_identifier = each.value
 }
 
-data "aws_sqs_queue" "observability" {
-  for_each = var.observability_sqs_queue_names
-
-  name = each.value
-}
-
 resource "aws_sns_topic" "observability_alerts" {
   for_each = local.observability_topic_names
 
@@ -402,7 +396,10 @@ resource "aws_cloudwatch_metric_alarm" "rds_connections" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "sqs_visible_messages" {
-  for_each = local.backend_envs
+  for_each = {
+    for env, cfg in local.backend_envs : env => cfg
+    if try(length(var.observability_sqs_queue_arns[env]) > 0, false)
+  }
 
   alarm_name          = "${var.project}-${each.key}-sqs-visible-messages"
   alarm_description   = "severity=P1 service=sqs metric=visible-messages"
@@ -417,7 +414,7 @@ resource "aws_cloudwatch_metric_alarm" "sqs_visible_messages" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    QueueName = data.aws_sqs_queue.observability[each.key].name
+    QueueName = element(split(":", var.observability_sqs_queue_arns[each.key]), 5)
   }
 
   alarm_actions = [aws_sns_topic.observability_alerts[each.key].arn]
@@ -431,7 +428,10 @@ resource "aws_cloudwatch_metric_alarm" "sqs_visible_messages" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "sqs_oldest_age" {
-  for_each = local.backend_envs
+  for_each = {
+    for env, cfg in local.backend_envs : env => cfg
+    if try(length(var.observability_sqs_queue_arns[env]) > 0, false)
+  }
 
   alarm_name          = "${var.project}-${each.key}-sqs-oldest-age"
   alarm_description   = "severity=P1 service=sqs metric=oldest-message-age"
@@ -446,7 +446,7 @@ resource "aws_cloudwatch_metric_alarm" "sqs_oldest_age" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    QueueName = data.aws_sqs_queue.observability[each.key].name
+    QueueName = element(split(":", var.observability_sqs_queue_arns[each.key]), 5)
   }
 
   alarm_actions = [aws_sns_topic.observability_alerts[each.key].arn]
@@ -516,4 +516,3 @@ resource "aws_cloudwatch_event_target" "guardduty_to_prod_security_topic" {
   target_id = "prod-security-topic"
   arn       = aws_sns_topic.observability_alerts["prod_security"].arn
 }
-
