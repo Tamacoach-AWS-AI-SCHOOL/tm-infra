@@ -114,6 +114,9 @@ tamacoach-shared-<resource>
 * `aws_lb`(NLB) 이름은 AWS 32자 제한으로 인해 `envs/shared/backend_infra.tf`의
   `aws_lb.tamacoach_shared_backend_internal`에 한해 `-backend-`를 `-be-`로 축약 허용.
 * 이 예외는 해당 리소스 1건에만 적용하며, 다른 리소스/스택으로 확장 금지.
+* `envs/shared`에서 관리하더라도 dev/prod 리소스를 직접 모니터링하는 observability
+  리소스(예: `aws_cloudwatch_metric_alarm`)는 운영 식별성을 위해
+  `tamacoach-<env>-...` 형식의 이름을 허용한다.
 
 만약 plan에 다음이 보이면 즉시 중지:
 

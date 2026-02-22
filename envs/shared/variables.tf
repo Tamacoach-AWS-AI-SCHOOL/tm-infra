@@ -232,6 +232,15 @@ variable "gitlab_app_role_name_prefix" {
   default     = "tamacoach-app-ci"
 }
 
+variable "observability_sqs_queue_names" {
+  type        = map(string)
+  description = "SQS queue names used for dev/prod CloudWatch alarms."
+  default = {
+    dev  = "tama.fifo"
+    prod = "tama.fifo"
+  }
+}
+
 variable "front_acm_certificate_arn" {
   type        = string
   description = "ACM certificate ARN in us-east-1 for CloudFront aliases."
