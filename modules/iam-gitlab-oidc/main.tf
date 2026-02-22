@@ -288,6 +288,8 @@ data "aws_iam_policy_document" "apply_permissions" {
       "elasticloadbalancing:Delete*",
       "elasticloadbalancing:Add*",
       "elasticloadbalancing:Remove*",
+      "elasticloadbalancing:RegisterTargets",
+      "elasticloadbalancing:DeregisterTargets",
       "autoscaling:Create*",
       "autoscaling:Update*",
       "autoscaling:Delete*",
