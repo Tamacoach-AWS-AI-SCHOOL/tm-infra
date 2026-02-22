@@ -78,6 +78,15 @@ output "AWS_ROLE_ARN_PROD" {
   value       = try(aws_iam_role.gitlab_app_ci_prod[0].arn, null)
 }
 
+output "observability_sns_topic_arns" {
+  description = "Observability SNS topics for dev/prod/prod-security alerts."
+  value = {
+    dev           = aws_sns_topic.observability_alerts["dev"].arn
+    prod          = aws_sns_topic.observability_alerts["prod"].arn
+    prod_security = aws_sns_topic.observability_alerts["prod_security"].arn
+  }
+}
+
 output "cloudfront_certificate_arn" {
   description = "ACM certificate ARN for CloudFront (*.tamacoach.net, tamacoach.net) in us-east-1."
   value       = aws_acm_certificate_validation.tamacoach_shared_cloudfront.certificate_arn
