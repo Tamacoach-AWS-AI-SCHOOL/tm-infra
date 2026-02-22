@@ -232,12 +232,12 @@ variable "gitlab_app_role_name_prefix" {
   default     = "tamacoach-app-ci"
 }
 
-variable "observability_sqs_queue_names" {
+variable "observability_sqs_queue_arns" {
   type        = map(string)
-  description = "SQS queue names used for dev/prod CloudWatch alarms."
+  description = "SQS queue ARNs used for dev/prod CloudWatch alarms."
   default = {
-    dev  = "tama.fifo"
-    prod = "tama.fifo"
+    dev  = ""
+    prod = ""
   }
 }
 
