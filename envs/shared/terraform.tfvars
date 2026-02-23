@@ -63,3 +63,5 @@ observability_sqs_queue_arns = {
   dev  = "arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"
   prod = "arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"
 }
+
+enable_observability_metrics_platform = true
