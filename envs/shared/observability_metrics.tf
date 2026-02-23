@@ -142,33 +142,117 @@ resource "aws_prometheus_alert_manager_definition" "observability" {
 
   workspace_id = aws_prometheus_workspace.observability[0].id
   definition   = <<-EOT
-route:
-  receiver: dev-alerts
-  group_by: ["alertname", "env", "cluster"]
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 4h
-  routes:
-    - receiver: dev-alerts
-      matchers:
-        - env="dev"
-    - receiver: prod-alerts
-      matchers:
-        - env="prod"
-receivers:
-  - name: dev-alerts
-    sns_configs:
-      - topic_arn: ${aws_sns_topic.observability_alerts["dev"].arn}
-        sigv4:
-          region: ${var.aws_region}
-        subject: "[AMP][dev] {{ .CommonLabels.alertname }}"
-  - name: prod-alerts
-    sns_configs:
-      - topic_arn: ${aws_sns_topic.observability_alerts["prod"].arn}
-        sigv4:
-          region: ${var.aws_region}
-        subject: "[AMP][prod] {{ .CommonLabels.alertname }}"
+alertmanager_config: |
+  route:
+    receiver: dev-alerts
+    group_by: ["alertname", "env", "cluster"]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+    routes:
+      - receiver: dev-alerts
+        matchers:
+          - env="dev"
+      - receiver: prod-alerts
+        matchers:
+          - env="prod"
+  receivers:
+    - name: dev-alerts
+      sns_configs:
+        - topic_arn: ${aws_sns_topic.observability_alerts["dev"].arn}
+          sigv4:
+            region: ${var.aws_region}
+          subject: "[AMP][dev] {{ .CommonLabels.alertname }}"
+    - name: prod-alerts
+      sns_configs:
+        - topic_arn: ${aws_sns_topic.observability_alerts["prod"].arn}
+          sigv4:
+            region: ${var.aws_region}
+          subject: "[AMP][prod] {{ .CommonLabels.alertname }}"
   EOT
+}
+
+resource "aws_iam_role" "observability_amg_workspace" {
+  count = var.enable_observability_metrics_platform ? 1 : 0
+
+  name = "${local.name_prefix}-amg-workspace-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowGrafanaAssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "grafana.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+
+  tags = merge(local.common_tags, {
+    Name    = "${local.name_prefix}-amg-workspace-role"
+    Service = "observability"
+  })
+}
+
+data "aws_iam_policy_document" "observability_amg_workspace" {
+  count = var.enable_observability_metrics_platform ? 1 : 0
+
+  statement {
+    sid    = "AllowReadCloudWatch"
+    effect = "Allow"
+    actions = [
+      "cloudwatch:DescribeAlarms",
+      "cloudwatch:GetMetricData",
+      "cloudwatch:GetMetricStatistics",
+      "cloudwatch:ListMetrics",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "logs:GetLogEvents",
+      "logs:FilterLogEvents",
+      "logs:StartQuery",
+      "logs:StopQuery",
+      "logs:GetQueryResults",
+      "ec2:DescribeRegions",
+      "ec2:DescribeTags",
+      "tag:GetResources",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowReadAmp"
+    effect = "Allow"
+    actions = [
+      "aps:DescribeWorkspace",
+      "aps:ListWorkspaces",
+      "aps:QueryMetrics",
+      "aps:GetSeries",
+      "aps:GetLabels",
+      "aps:GetMetricMetadata",
+    ]
+    resources = [aws_prometheus_workspace.observability[0].arn]
+  }
+}
+
+resource "aws_iam_policy" "observability_amg_workspace" {
+  count = var.enable_observability_metrics_platform ? 1 : 0
+
+  name   = "${local.name_prefix}-amg-workspace-policy"
+  policy = data.aws_iam_policy_document.observability_amg_workspace[0].json
+
+  tags = merge(local.common_tags, {
+    Name    = "${local.name_prefix}-amg-workspace-policy"
+    Service = "observability"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "observability_amg_workspace" {
+  count = var.enable_observability_metrics_platform ? 1 : 0
+
+  role       = aws_iam_role.observability_amg_workspace[0].name
+  policy_arn = aws_iam_policy.observability_amg_workspace[0].arn
 }
 
 resource "aws_grafana_workspace" "observability" {
@@ -178,6 +262,7 @@ resource "aws_grafana_workspace" "observability" {
   account_access_type       = "CURRENT_ACCOUNT"
   authentication_providers  = var.amg_authentication_providers
   permission_type           = "SERVICE_MANAGED"
+  role_arn                  = aws_iam_role.observability_amg_workspace[0].arn
   data_sources              = ["PROMETHEUS", "CLOUDWATCH"]
   notification_destinations = ["SNS"]
 
@@ -185,6 +270,10 @@ resource "aws_grafana_workspace" "observability" {
     Name    = var.amg_workspace_name
     Service = "observability"
   })
+
+  depends_on = [
+    aws_iam_role_policy_attachment.observability_amg_workspace,
+  ]
 }
 
 resource "aws_grafana_role_association" "observability_admin" {
