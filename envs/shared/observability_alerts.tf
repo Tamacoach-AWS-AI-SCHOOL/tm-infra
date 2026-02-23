@@ -471,6 +471,9 @@ resource "aws_cloudwatch_event_rule" "securityhub_high_critical" {
         Severity = {
           Label = ["HIGH", "CRITICAL"]
         }
+        Workflow = {
+          Status = ["NEW"]
+        }
       }
     }
   })
