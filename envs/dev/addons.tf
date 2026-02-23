@@ -13,7 +13,7 @@ locals {
   ]
 
   addons_metrics_server_chart_version = "3.12.2"
-  addons_fluent_bit_chart_version     = "0.1.36"
+  addons_fluent_bit_chart_version     = "0.2.0"
   addons_aws_lbc_chart_version        = "1.11.0"
   addons_ebs_csi_chart_version        = "2.33.0"
   addons_karpenter_chart_version      = "1.0.8"
