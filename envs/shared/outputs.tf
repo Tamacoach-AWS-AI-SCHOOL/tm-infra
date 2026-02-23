@@ -78,6 +78,72 @@ output "AWS_ROLE_ARN_PROD" {
   value       = try(aws_iam_role.gitlab_app_ci_prod[0].arn, null)
 }
 
+output "observability_sns_topic_arns" {
+  description = "Observability SNS topics for dev/prod/prod-security alerts."
+  value = {
+    dev           = aws_sns_topic.observability_alerts["dev"].arn
+    prod          = aws_sns_topic.observability_alerts["prod"].arn
+    prod_security = aws_sns_topic.observability_alerts["prod_security"].arn
+  }
+}
+
+output "observability_logs_kms_key_arn" {
+  description = "KMS key ARN for EKS control plane/application CloudWatch log groups."
+  value       = aws_kms_key.observability_logs.arn
+}
+
+output "observability_logs_readonly_policy_arns" {
+  description = "Environment-specific IAM policy ARNs for CloudWatch logs read-only access."
+  value = {
+    dev  = aws_iam_policy.observability_logs_readonly["dev"].arn
+    prod = aws_iam_policy.observability_logs_readonly["prod"].arn
+  }
+}
+
+output "observability_amp_workspace_arn" {
+  description = "AMP workspace ARN for cluster metrics remote write."
+  value       = try(aws_prometheus_workspace.observability[0].arn, null)
+}
+
+output "observability_amp_workspace_id" {
+  description = "AMP workspace ID for cluster metrics."
+  value       = try(aws_prometheus_workspace.observability[0].id, null)
+}
+
+output "observability_amp_remote_write_endpoint" {
+  description = "AMP remote write endpoint used by ADOT collectors."
+  value       = try("${aws_prometheus_workspace.observability[0].prometheus_endpoint}api/v1/remote_write", null)
+}
+
+output "observability_adot_remote_write_policy_arns" {
+  description = "Environment-specific IAM policy ARNs for ADOT AMP remote write."
+  value = {
+    for env, policy in aws_iam_policy.observability_amp_remote_write : env => policy.arn
+  }
+}
+
+output "observability_amg_workspace_arn" {
+  description = "AMG workspace ARN for observability dashboards."
+  value       = try(aws_grafana_workspace.observability[0].arn, null)
+}
+
+output "observability_amg_workspace_id" {
+  description = "AMG workspace ID for observability dashboards."
+  value       = try(aws_grafana_workspace.observability[0].id, null)
+}
+
+output "observability_amg_workspace_endpoint" {
+  description = "AMG workspace endpoint URL."
+  value       = try(aws_grafana_workspace.observability[0].endpoint, null)
+}
+
+output "observability_metrics_readonly_policy_arns" {
+  description = "Environment-specific IAM policy ARNs for AMP/AMG read-only access."
+  value = {
+    for env, policy in aws_iam_policy.observability_metrics_readonly : env => policy.arn
+  }
+}
+
 output "cloudfront_certificate_arn" {
   description = "ACM certificate ARN for CloudFront (*.tamacoach.net, tamacoach.net) in us-east-1."
   value       = aws_acm_certificate_validation.tamacoach_shared_cloudfront.certificate_arn

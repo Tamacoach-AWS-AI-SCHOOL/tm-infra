@@ -196,29 +196,56 @@ ArgoCD RBAC/CM 주입 위치(Helm values):
 - `kubectl -n argocd get cm argocd-rbac-cm -o yaml`
 - `kubectl -n argocd get cm argocd-cm -o yaml`
 
-## P3/P9 분리 운영 메모
+## Logging/Observability 메모
 
-### P3에서 하는 것 (이번 단계)
+### 현재 반영된 범위 (1차)
 
-- IRSA 기반 전제(OIDC Provider + Terraform-managed ServiceAccount annotation 패턴)를 유지한다.
 - EKS Control Plane Logging을 dev/prod 공통으로 활성화한다.
-  - 기본 ON: `api`, `audit`, `authenticator`
-  - 기본 OFF(필요 시 P9에서 옵션 확장): `controllerManager`, `scheduler`
-- CloudWatch 로그 그룹은 EKS 기본 로그 그룹(`/aws/eks/<cluster>/cluster`)을 전제로 사용한다.
-  - Log Group naming/retention/KMS 세부 표준화는 P9에서 일괄 적용한다.
+  - ON: `api`, `audit`, `authenticator`, `controllerManager`, `scheduler`
+- Control Plane 로그 그룹(`/aws/eks/<cluster>/cluster`) retention을 env별로 관리한다.
+  - dev: 14일
+  - prod: 30일
+- 컨테이너 로그 수집(Fluent Bit)을 dev/prod 공통으로 구성한다.
+  - Helm chart: `aws-for-fluent-bit`
+  - 로그 그룹: `${project}/${env}/eks/<cluster>/application`
+  - IRSA ServiceAccount: `observability/aws-for-fluent-bit`
+- 로그 기반 최소 알람 세트를 CloudWatch Logs Metric Filter + Alarm으로 구성한다.
+  - `ERROR`, `5xx`, `CrashLoopBackOff`, `OOMKilled`
+  - 알람 라우팅: `tamacoach-dev-alerts`, `tamacoach-prod-alerts` (SNS -> Lambda -> Slack 재사용)
 
-### P9에서 하는 것 (후속 단계)
+### 다음 단계 (후속)
 
-- Fluent Bit(노드/컨테이너 로그 수집)
 - ADOT -> AMP(shared) -> AMG(shared) 경로
-- SNS -> Lambda -> Slack 알림, CloudWatch Alarm 세트, Grafana Alerting rules
-- Slack webhook는 SSM SecureString + KMS로 관리
-  - 경로 규칙: `/{project}/{env}/slack/...`
+- Grafana Alerting rules 고도화
+- 로그 패턴/임계치 운영 데이터 기반 튜닝
+- (선택) Control Plane/Application 로그 그룹 KMS 키 분리 운영
 
-P9를 뒤로 미루는 이유:
+### 메트릭 플랫폼 표준 (ADOT/AMP/AMG)
 
-- API Gateway/NLB/RDS/SQS/CloudFront 등 알람 타깃은 P4~P6에서 확정되므로 이후에 관측/알림을 붙이는 편이 변경 비용이 작다.
-- 현재 단계는 클러스터 안정화(P3)와 접근/권한/기본 애드온 정합성 확보가 우선이다.
+- shared:
+  - AMP workspace(`aws_prometheus_workspace`)를 생성하고 remote write endpoint를 output/SSM으로 배포한다.
+  - AMG workspace(`aws_grafana_workspace`)를 생성하고 Prometheus/CloudWatch datasource 타입을 활성화한다.
+  - AMP Alertmanager를 SNS(dev/prod)로 라우팅해 기존 Slack Lambda 경로를 재사용한다.
+  - Alert rule IaC는 AMG API 의존도를 줄이기 위해 AMP rule group namespace로 관리한다.
+  - ADOT remote write용 IAM 정책, 운영 조회용 AMP/AMG readonly IAM 정책을 env별(dev/prod)로 생성한다.
+- dev/prod:
+  - `enable_adot_metrics=true`일 때 `kube-state-metrics`, `prometheus-node-exporter`, `adot-collector`를 observability namespace에 배포한다.
+  - ADOT collector는 AMP remote write를 사용하고, 공통 라벨(`env`, `cluster`)을 메트릭에 주입한다.
+  - 고카디널리티 라벨(`pod_uid`, `container_id`, `id`)은 remote write 전에 제거한다.
+- IRSA:
+  - `enable_adot_irsa=true` + `enable_adot_metrics=true`일 때 `observability/adot-collector` SA에 최소권한(`aps:RemoteWrite` 범위) 정책을 연결한다.
+  - policy ARN은 `adot_policy_arns`를 우선 사용하고, 없으면 shared remote state output을 기본 사용한다.
+
+### 월간 점검 체크리스트
+
+- dev/prod 컨테이너 로그 유입 여부(최근 24h 샘플) 확인
+- Log Group retention/KMS 설정 drift 여부 점검
+- 로그 기반 알람 오탐/미탐 리뷰 후 임계치 조정
+- CloudWatch Logs ingest 비용 추이 확인(전월 대비 증감)
+- ADOT collector / exporter 타겟 up 비율 점검 (`kube-state-metrics`, `node-exporter`, `apiserver`, `kubelet-cadvisor`)
+- AMP ingest/query 비용 및 샘플 수 추세 점검
+- AMG datasource/notification(SNS) 연결 상태 점검
+- AMP Alertmanager 라우팅(dev/prod) 및 Slack 수신 정상 여부 점검
 
 ## ArgoCD AppProject 경계(dev/prod)
 

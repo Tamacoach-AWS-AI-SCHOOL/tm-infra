@@ -13,10 +13,14 @@ locals {
   ]
 
   addons_metrics_server_chart_version = "3.12.2"
+  addons_fluent_bit_chart_version     = "0.2.0"
   addons_aws_lbc_chart_version        = "1.11.0"
   addons_ebs_csi_chart_version        = "2.33.0"
   addons_karpenter_chart_version      = "1.0.8"
   addons_argocd_chart_version         = "7.7.16"
+  addons_kube_state_metrics_chart     = "kube-state-metrics"
+  addons_node_exporter_chart          = "prometheus-node-exporter"
+  addons_adot_collector_chart         = "opentelemetry-collector"
   addons_karpenter_allowed_types      = ["t3.medium", "t3.large", "m5.large", "c6i.large"]
 
   addons_cluster_name            = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
@@ -42,6 +46,11 @@ check "addons_require_irsa" {
     condition     = var.enable_irsa
     error_message = "Add-ons in envs/dev/addons.tf require enable_irsa=true so Terraform-managed ServiceAccounts are reused."
   }
+
+  assert {
+    condition     = !var.enable_adot_metrics || (var.enable_adot_irsa && local.effective_adot_remote_write_endpoint != "")
+    error_message = "When enable_adot_metrics=true, set enable_adot_irsa=true and provide ADOT remote write endpoint (or shared output)."
+  }
 }
 
 resource "helm_release" "metrics_server" {
@@ -57,6 +66,298 @@ resource "helm_release" "metrics_server" {
       nodeSelector = local.addons_system_node_selector
       tolerations  = local.addons_system_tolerations
     })
+  ]
+}
+
+resource "helm_release" "aws_for_fluent_bit" {
+  count            = var.enable_fluent_bit ? 1 : 0
+  name             = "aws-for-fluent-bit"
+  repository       = "https://aws.github.io/eks-charts"
+  chart            = "aws-for-fluent-bit"
+  version          = local.addons_fluent_bit_chart_version
+  namespace        = "observability"
+  create_namespace = true
+
+  values = [
+    yamlencode({
+      serviceAccount = {
+        create = false
+        name   = "aws-for-fluent-bit"
+      }
+      cloudWatchLogs = {
+        enabled         = true
+        region          = var.aws_region
+        logGroupName    = "${var.project}/${var.env}/eks/${local.addons_cluster_name}/application"
+        logStreamPrefix = "fluent-bit-"
+        autoCreateGroup = false
+      }
+      cloudWatch = {
+        enabled = false
+      }
+      firehose = {
+        enabled = false
+      }
+      kinesis = {
+        enabled = false
+      }
+      elasticsearch = {
+        enabled = false
+      }
+      nodeSelector = local.addons_system_node_selector
+      tolerations  = local.addons_system_tolerations
+    })
+  ]
+
+  depends_on = [
+    module.irsa,
+    aws_cloudwatch_log_group.eks_application,
+  ]
+}
+
+resource "helm_release" "kube_state_metrics" {
+  count            = var.enable_adot_metrics ? 1 : 0
+  name             = "kube-state-metrics"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = local.addons_kube_state_metrics_chart
+  namespace        = "observability"
+  create_namespace = true
+
+  values = [
+    yamlencode({
+      nodeSelector = local.addons_system_node_selector
+      tolerations  = local.addons_system_tolerations
+      prometheus = {
+        monitor = {
+          enabled = false
+        }
+      }
+    })
+  ]
+}
+
+resource "helm_release" "prometheus_node_exporter" {
+  count            = var.enable_adot_metrics ? 1 : 0
+  name             = "prometheus-node-exporter"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = local.addons_node_exporter_chart
+  namespace        = "observability"
+  create_namespace = true
+
+  values = [
+    yamlencode({
+      nodeSelector = local.addons_system_node_selector
+      tolerations  = local.addons_system_tolerations
+      prometheus = {
+        monitor = {
+          enabled = false
+        }
+      }
+    })
+  ]
+}
+
+resource "kubernetes_cluster_role" "adot_collector_metrics_read" {
+  count = var.enable_adot_metrics ? 1 : 0
+
+  metadata {
+    name = "adot-collector-metrics-read"
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  rule {
+    non_resource_urls = ["/metrics", "/metrics/*"]
+    verbs             = ["get"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "adot_collector_metrics_read" {
+  count = var.enable_adot_metrics ? 1 : 0
+
+  metadata {
+    name = "adot-collector-metrics-read"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.adot_collector_metrics_read[0].metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "adot-collector"
+    namespace = "observability"
+  }
+
+  depends_on = [module.irsa]
+}
+
+resource "helm_release" "adot_collector" {
+  count            = var.enable_adot_metrics ? 1 : 0
+  name             = "adot-collector"
+  repository       = "https://open-telemetry.github.io/opentelemetry-helm-charts"
+  chart            = local.addons_adot_collector_chart
+  namespace        = "observability"
+  create_namespace = true
+  timeout          = 600
+
+  values = [
+    yamlencode({
+      mode = "deployment"
+      image = {
+        repository = "public.ecr.aws/aws-observability/aws-otel-collector"
+        tag        = "v0.45.0"
+      }
+      serviceAccount = {
+        create = false
+        name   = "adot-collector"
+      }
+      nodeSelector = local.addons_system_node_selector
+      tolerations  = local.addons_system_tolerations
+      config = {
+        extensions = {
+          health_check = {}
+          sigv4auth = {
+            region  = var.aws_region
+            service = "aps"
+          }
+        }
+        receivers = {
+          prometheus = {
+            config = {
+              global = {
+                scrape_interval = var.adot_scrape_interval
+                scrape_timeout  = var.adot_scrape_timeout
+              }
+              scrape_configs = [
+                {
+                  job_name = "kube-state-metrics"
+                  kubernetes_sd_configs = [
+                    {
+                      role = "endpoints"
+                    }
+                  ]
+                  relabel_configs = [
+                    {
+                      action        = "keep"
+                      source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_service_name"]
+                      regex         = "observability;kube-state-metrics"
+                    }
+                  ]
+                },
+                {
+                  job_name = "node-exporter"
+                  kubernetes_sd_configs = [
+                    {
+                      role = "endpoints"
+                    }
+                  ]
+                  relabel_configs = [
+                    {
+                      action        = "keep"
+                      source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_service_name"]
+                      regex         = "observability;prometheus-node-exporter"
+                    }
+                  ]
+                },
+                {
+                  job_name          = "kubelet-cadvisor"
+                  scheme            = "https"
+                  bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                  tls_config = {
+                    insecure_skip_verify = true
+                  }
+                  kubernetes_sd_configs = [
+                    {
+                      role = "node"
+                    }
+                  ]
+                  relabel_configs = [
+                    {
+                      target_label = "__address__"
+                      replacement  = "kubernetes.default.svc:443"
+                    },
+                    {
+                      source_labels = ["__meta_kubernetes_node_name"]
+                      target_label  = "__metrics_path__"
+                      regex         = "(.+)"
+                      replacement   = "/api/v1/nodes/$1/proxy/metrics/cadvisor"
+                    }
+                  ]
+                },
+                {
+                  job_name = "apiserver"
+                  kubernetes_sd_configs = [
+                    {
+                      role = "endpoints"
+                    }
+                  ]
+                  scheme = "https"
+                  tls_config = {
+                    insecure_skip_verify = true
+                  }
+                  bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                  relabel_configs = [
+                    {
+                      action        = "keep"
+                      source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_service_name", "__meta_kubernetes_endpoint_port_name"]
+                      regex         = "default;kubernetes;https"
+                    }
+                  ]
+                },
+              ]
+            }
+          }
+        }
+        processors = {
+          resource = {
+            attributes = [
+              {
+                action = "upsert"
+                key    = "env"
+                value  = var.env
+              },
+              {
+                action = "upsert"
+                key    = "cluster"
+                value  = local.addons_cluster_name
+              },
+            ]
+          }
+          batch = {}
+        }
+        exporters = {
+          prometheusremotewrite = {
+            endpoint = local.effective_adot_remote_write_endpoint
+            auth = {
+              authenticator = "sigv4auth"
+            }
+          }
+        }
+        service = {
+          extensions = ["health_check", "sigv4auth"]
+          pipelines = {
+            metrics = {
+              receivers  = ["prometheus"]
+              processors = ["resource", "batch"]
+              exporters  = ["prometheusremotewrite"]
+            }
+          }
+        }
+      }
+    })
+  ]
+
+  depends_on = [
+    module.irsa,
+    kubernetes_cluster_role_binding.adot_collector_metrics_read,
+    helm_release.kube_state_metrics,
+    helm_release.prometheus_node_exporter,
   ]
 }
 

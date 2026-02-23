@@ -76,7 +76,7 @@ variable "addon_versions" {
 variable "control_plane_log_types" {
   type        = list(string)
   description = "EKS control plane log types to enable."
-  default     = ["api", "audit", "authenticator"]
+  default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 }
 
 variable "authentication_mode" {

@@ -232,6 +232,57 @@ variable "gitlab_app_role_name_prefix" {
   default     = "tamacoach-app-ci"
 }
 
+variable "observability_sqs_queue_arns" {
+  type        = map(string)
+  description = "SQS queue ARNs used for dev/prod CloudWatch alarms."
+  default = {
+    dev  = ""
+    prod = ""
+  }
+}
+
+variable "enable_observability_metrics_platform" {
+  type        = bool
+  description = "Enable AMP/AMG based metrics platform resources in shared stack."
+  default     = true
+}
+
+variable "amp_workspace_alias" {
+  type        = string
+  description = "Alias used when creating AMP workspace."
+  default     = "tamacoach-shared-metrics"
+}
+
+variable "amg_workspace_name" {
+  type        = string
+  description = "AMG workspace name."
+  default     = "tamacoach-shared-grafana"
+}
+
+variable "amg_authentication_providers" {
+  type        = list(string)
+  description = "AMG authentication providers."
+  default     = ["AWS_SSO"]
+}
+
+variable "amg_admin_group_ids" {
+  type        = list(string)
+  description = "Optional AWS IAM Identity Center group IDs to associate as AMG admins."
+  default     = []
+}
+
+variable "amg_editor_group_ids" {
+  type        = list(string)
+  description = "Optional AWS IAM Identity Center group IDs to associate as AMG editors."
+  default     = []
+}
+
+variable "amg_viewer_group_ids" {
+  type        = list(string)
+  description = "Optional AWS IAM Identity Center group IDs to associate as AMG viewers."
+  default     = []
+}
+
 variable "front_acm_certificate_arn" {
   type        = string
   description = "ACM certificate ARN in us-east-1 for CloudFront aliases."

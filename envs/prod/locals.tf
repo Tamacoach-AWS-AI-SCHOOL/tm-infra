@@ -20,4 +20,9 @@ locals {
     Owner     = var.owner
     ManagedBy = "Terraform"
   }
+  effective_eks_log_kms_key_arn        = var.eks_log_kms_key_arn != null ? var.eks_log_kms_key_arn : try(data.terraform_remote_state.network.outputs.observability_logs_kms_key_arn, null)
+  effective_adot_remote_write_endpoint = var.adot_remote_write_endpoint != "" ? var.adot_remote_write_endpoint : try(data.terraform_remote_state.network.outputs.observability_amp_remote_write_endpoint, "")
+  effective_adot_policy_arns = try(length(var.adot_policy_arns), 0) > 0 ? var.adot_policy_arns : compact([
+    try(data.terraform_remote_state.network.outputs.observability_adot_remote_write_policy_arns[var.env], ""),
+  ])
 }
