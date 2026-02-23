@@ -1,7 +1,7 @@
 locals {
   securityhub_standards_arns = {
     aws_foundational = "arn:aws:securityhub:${var.aws_region}::standards/aws-foundational-security-best-practices/v/1.0.0"
-    cis_aws          = "arn:aws:securityhub:${var.aws_region}::standards/cis-aws-foundations-benchmark/v/1.2.0"
+    cis_aws          = "arn:aws:securityhub:${var.aws_region}::standards/cis-aws-foundations-benchmark/v/1.4.0"
   }
 }
 
