@@ -144,6 +144,16 @@ output "observability_metrics_readonly_policy_arns" {
   }
 }
 
+output "securityhub_account_id" {
+  description = "Security Hub account ID when security services platform is enabled."
+  value       = try(aws_securityhub_account.observability[0].id, null)
+}
+
+output "guardduty_detector_id" {
+  description = "GuardDuty detector ID when security services platform is enabled."
+  value       = try(aws_guardduty_detector.observability[0].id, null)
+}
+
 output "cloudfront_certificate_arn" {
   description = "ACM certificate ARN for CloudFront (*.tamacoach.net, tamacoach.net) in us-east-1."
   value       = aws_acm_certificate_validation.tamacoach_shared_cloudfront.certificate_arn
