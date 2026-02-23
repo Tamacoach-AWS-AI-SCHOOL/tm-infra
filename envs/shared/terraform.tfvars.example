@@ -54,3 +54,11 @@ enable_gitlab_oidc = false
 # gitlab_role_name_prefix_shared = "tamacoach-shared" # keep existing shared role name
 # gitlab_role_name_prefix_dev = "tamacoach-dev"
 # gitlab_role_name_prefix_prod = "tamacoach-prod"
+
+enable_observability_metrics_platform = true
+amp_workspace_alias                   = "tamacoach-shared-metrics"
+amg_workspace_name                    = "tamacoach-shared-grafana"
+# amg_authentication_providers        = ["AWS_SSO"]
+# amg_admin_group_ids                 = ["<identity-center-group-id>"]
+# amg_editor_group_ids                = []
+# amg_viewer_group_ids                = []

@@ -174,11 +174,11 @@ locals {
         tags               = {}
       }
     ] : [],
-    var.enable_adot_irsa ? [
+    var.enable_adot_irsa && var.enable_adot_metrics ? [
       {
         namespace          = "observability"
         name               = "adot-collector"
-        policy_arns        = var.adot_policy_arns
+        policy_arns        = local.effective_adot_policy_arns
         inline_policy_json = null
         create_namespace   = true
         tags               = {}
@@ -216,8 +216,8 @@ check "irsa_required_policy_arns_when_enabled" {
   }
 
   assert {
-    condition     = !var.enable_adot_irsa || (var.enable_irsa && try(length(var.adot_policy_arns), 0) > 0)
-    error_message = "When enable_adot_irsa=true, set enable_irsa=true and provide at least one adot_policy_arns value."
+    condition     = !var.enable_adot_irsa || (var.enable_irsa && var.enable_adot_metrics && length(local.effective_adot_policy_arns) > 0)
+    error_message = "When enable_adot_irsa=true, set enable_irsa=true, enable_adot_metrics=true, and ensure effective ADOT policy ARNs are available."
   }
 
   assert {
