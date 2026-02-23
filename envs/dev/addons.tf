@@ -244,7 +244,7 @@ resource "helm_release" "adot_collector" {
                       source_labels = ["__meta_kubernetes_node_name"]
                       target_label  = "__metrics_path__"
                       regex         = "(.+)"
-                      replacement   = "/api/v1/nodes/$${1}/proxy/metrics/cadvisor"
+                      replacement   = "/api/v1/nodes/$1/proxy/metrics/cadvisor"
                     }
                   ]
                 },
