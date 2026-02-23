@@ -79,7 +79,19 @@ variable "addon_versions" {
 variable "control_plane_log_types" {
   type        = list(string)
   description = "EKS control plane log types enabled in P3 baseline."
-  default     = ["api", "audit", "authenticator"]
+  default     = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+}
+
+variable "control_plane_log_retention_days" {
+  type        = number
+  description = "CloudWatch log retention for EKS control plane log group."
+  default     = 30
+}
+
+variable "eks_log_kms_key_arn" {
+  type        = string
+  description = "Optional KMS key ARN for EKS control plane/application log groups."
+  default     = null
 }
 
 variable "ssm_parameter_names" {
@@ -196,6 +208,12 @@ variable "enable_adot_irsa" {
   type        = bool
   description = "Create IRSA for observability/adot-collector."
   default     = false
+}
+
+variable "enable_fluent_bit" {
+  type        = bool
+  description = "Deploy aws-for-fluent-bit with IRSA to ship container logs to CloudWatch."
+  default     = true
 }
 
 variable "enable_external_secrets_irsa" {
