@@ -107,7 +107,7 @@ output "observability_amp_workspace_arn" {
 
 output "observability_amp_workspace_id" {
   description = "AMP workspace ID for cluster metrics."
-  value       = try(aws_prometheus_workspace.observability[0].workspace_id, null)
+  value       = try(aws_prometheus_workspace.observability[0].id, null)
 }
 
 output "observability_amp_remote_write_endpoint" {
