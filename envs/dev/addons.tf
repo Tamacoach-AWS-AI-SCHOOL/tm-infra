@@ -288,15 +288,6 @@ resource "helm_release" "adot_collector" {
               },
             ]
           }
-          transform = {
-            error_mode = "ignore"
-            metric_statements = [
-              {
-                context    = "datapoint"
-                statements = [for label in var.adot_metric_drop_labels : "delete_key(attributes, \"${label}\")"]
-              }
-            ]
-          }
           batch = {}
         }
         exporters = {
@@ -312,7 +303,7 @@ resource "helm_release" "adot_collector" {
           pipelines = {
             metrics = {
               receivers  = ["prometheus"]
-              processors = ["resource", "transform", "batch"]
+              processors = ["resource", "batch"]
               exporters  = ["prometheusremotewrite"]
             }
           }
