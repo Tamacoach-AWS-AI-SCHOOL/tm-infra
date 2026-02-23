@@ -210,6 +210,36 @@ variable "enable_adot_irsa" {
   default     = false
 }
 
+variable "enable_adot_metrics" {
+  type        = bool
+  description = "Deploy ADOT metrics collector and Prometheus exporters."
+  default     = false
+}
+
+variable "adot_remote_write_endpoint" {
+  type        = string
+  description = "AMP remote write endpoint for ADOT (defaults to shared remote state output)."
+  default     = ""
+}
+
+variable "adot_scrape_interval" {
+  type        = string
+  description = "Prometheus scrape interval for ADOT collector."
+  default     = "30s"
+}
+
+variable "adot_scrape_timeout" {
+  type        = string
+  description = "Prometheus scrape timeout for ADOT collector."
+  default     = "10s"
+}
+
+variable "adot_metric_drop_labels" {
+  type        = list(string)
+  description = "High-cardinality metric labels removed before remote write."
+  default     = ["pod_uid", "container_id", "id"]
+}
+
 variable "enable_fluent_bit" {
   type        = bool
   description = "Deploy aws-for-fluent-bit with IRSA to ship container logs to CloudWatch."
