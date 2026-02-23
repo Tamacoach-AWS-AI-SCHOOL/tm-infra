@@ -113,8 +113,20 @@ locals {
             "sqs:DeleteMessage",
             "sqs:ChangeMessageVisibility",
             "sqs:GetQueueAttributes",
+            "sqs:GetQueueUrl",
           ]
           Resource = var.worker_queue_arns
+        }
+      ] : [],
+      var.bedrock_agentcore_runtime_arn != "" ? [
+        {
+          Sid      = "AllowWorkerInvokeAgentCore"
+          Effect   = "Allow"
+          Action   = ["bedrock-agentcore:InvokeAgentRuntime"]
+          Resource = [
+            var.bedrock_agentcore_runtime_arn,
+            "${var.bedrock_agentcore_runtime_arn}/runtime-endpoint/*",
+          ]
         }
       ] : []
     )

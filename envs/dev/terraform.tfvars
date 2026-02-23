@@ -22,6 +22,7 @@ enable_argocd_repo_creds     = true
 # dev 전용 큐가 있으면 ARN을 교체하세요.
 backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
 worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:193629269600:runtime/MyPersonaReport-oUv99P70iW"
 
 access_entries = [
   {
