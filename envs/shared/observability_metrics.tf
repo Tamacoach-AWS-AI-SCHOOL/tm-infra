@@ -262,7 +262,7 @@ resource "aws_grafana_workspace" "observability" {
   account_access_type       = "CURRENT_ACCOUNT"
   authentication_providers  = var.amg_authentication_providers
   permission_type           = "SERVICE_MANAGED"
-  workspace_role_arn        = aws_iam_role.observability_amg_workspace[0].arn
+  role_arn                  = aws_iam_role.observability_amg_workspace[0].arn
   data_sources              = ["PROMETHEUS", "CLOUDWATCH"]
   notification_destinations = ["SNS"]
 
