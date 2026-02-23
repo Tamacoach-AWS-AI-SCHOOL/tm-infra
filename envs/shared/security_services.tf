@@ -54,7 +54,7 @@ resource "aws_inspector2_enabler" "observability" {
   count = var.enable_security_services_platform ? 1 : 0
 
   account_ids    = [data.aws_caller_identity.current.account_id]
-  resource_types = ["ECR", "EC2", "EKS"]
+  resource_types = ["ECR", "EC2"]
 }
 
 resource "aws_macie2_account" "observability" {
