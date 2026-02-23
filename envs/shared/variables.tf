@@ -247,6 +247,20 @@ variable "enable_observability_metrics_platform" {
   default     = true
 }
 
+variable "enable_security_services_platform" {
+  type        = bool
+  description = "Enable Security Hub, GuardDuty, Inspector, and Macie resources in shared stack."
+  default     = true
+}
+
+variable "macie_target_bucket_names" {
+  type        = list(string)
+  description = "S3 bucket names scanned by Macie classification jobs."
+  default = [
+    "tamacoach-shared-front-static-193629269600",
+  ]
+}
+
 variable "amp_workspace_alias" {
   type        = string
   description = "Alias used when creating AMP workspace."

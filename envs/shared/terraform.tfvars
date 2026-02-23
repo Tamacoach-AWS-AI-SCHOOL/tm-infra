@@ -65,3 +65,8 @@ observability_sqs_queue_arns = {
 }
 
 enable_observability_metrics_platform = true
+
+enable_security_services_platform = true
+macie_target_bucket_names = [
+  "tamacoach-shared-front-static-193629269600",
+]
