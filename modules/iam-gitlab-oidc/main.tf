@@ -381,6 +381,7 @@ data "aws_iam_policy_document" "apply_permissions" {
       "events:UntagResource",
       "securityhub:EnableSecurityHub",
       "securityhub:DisableSecurityHub",
+      "securityhub:UpdateSecurityHubConfiguration",
       "securityhub:BatchEnableStandards",
       "securityhub:BatchDisableStandards",
       "securityhub:TagResource",
