@@ -154,6 +154,47 @@ resource "helm_release" "prometheus_node_exporter" {
   ]
 }
 
+resource "kubernetes_cluster_role" "adot_collector_metrics_read" {
+  count = var.enable_adot_metrics ? 1 : 0
+
+  metadata {
+    name = "adot-collector-metrics-read"
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["nodes", "nodes/proxy", "services", "endpoints", "pods"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  rule {
+    non_resource_urls = ["/metrics", "/metrics/*"]
+    verbs             = ["get"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "adot_collector_metrics_read" {
+  count = var.enable_adot_metrics ? 1 : 0
+
+  metadata {
+    name = "adot-collector-metrics-read"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.adot_collector_metrics_read[0].metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = "adot-collector"
+    namespace = "observability"
+  }
+
+  depends_on = [module.irsa]
+}
+
 resource "helm_release" "adot_collector" {
   count            = var.enable_adot_metrics ? 1 : 0
   name             = "adot-collector"
@@ -168,6 +209,7 @@ resource "helm_release" "adot_collector" {
       mode = "deployment"
       image = {
         repository = "public.ecr.aws/aws-observability/aws-otel-collector"
+        tag        = "v0.45.0"
       }
       serviceAccount = {
         create = false
@@ -242,7 +284,7 @@ resource "helm_release" "adot_collector" {
                       source_labels = ["__meta_kubernetes_node_name"]
                       target_label  = "__metrics_path__"
                       regex         = "(.+)"
-                      replacement   = "/api/v1/nodes/$${1}/proxy/metrics/cadvisor"
+                      replacement   = "/api/v1/nodes/$1/proxy/metrics/cadvisor"
                     }
                   ]
                 },
@@ -285,19 +327,6 @@ resource "helm_release" "adot_collector" {
               },
             ]
           }
-          metricstransform = {
-            transforms = [
-              {
-                include    = ".*"
-                match_type = "regexp"
-                action     = "update"
-                operations = [for label in var.adot_metric_drop_labels : {
-                  action = "delete_label"
-                  label  = label
-                }]
-              }
-            ]
-          }
           batch = {}
         }
         exporters = {
@@ -313,7 +342,7 @@ resource "helm_release" "adot_collector" {
           pipelines = {
             metrics = {
               receivers  = ["prometheus"]
-              processors = ["resource", "metricstransform", "batch"]
+              processors = ["resource", "batch"]
               exporters  = ["prometheusremotewrite"]
             }
           }
@@ -324,6 +353,7 @@ resource "helm_release" "adot_collector" {
 
   depends_on = [
     module.irsa,
+    kubernetes_cluster_role_binding.adot_collector_metrics_read,
     helm_release.kube_state_metrics,
     helm_release.prometheus_node_exporter,
   ]
