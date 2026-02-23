@@ -21,7 +21,7 @@ resource "aws_ssm_parameter" "observability_amp_workspace_id" {
 
   name      = "${local.ssm_shared_prefix}/obs/metrics/amp/workspace_id"
   type      = "String"
-  value     = aws_prometheus_workspace.observability[0].workspace_id
+  value     = aws_prometheus_workspace.observability[0].id
   overwrite = true
 }
 
@@ -75,7 +75,7 @@ resource "aws_prometheus_rule_group_namespace" "observability_baseline" {
   for_each = var.enable_observability_metrics_platform ? local.observability_metrics_envs : {}
 
   name         = "${var.project}-${each.key}-baseline"
-  workspace_id = aws_prometheus_workspace.observability[0].workspace_id
+  workspace_id = aws_prometheus_workspace.observability[0].id
   data         = <<-EOT
 groups:
   - name: ${var.project}-${each.key}-kubernetes-baseline
@@ -140,7 +140,7 @@ groups:
 resource "aws_prometheus_alert_manager_definition" "observability" {
   count = var.enable_observability_metrics_platform ? 1 : 0
 
-  workspace_id = aws_prometheus_workspace.observability[0].workspace_id
+  workspace_id = aws_prometheus_workspace.observability[0].id
   definition   = <<-EOT
 route:
   receiver: dev-alerts
