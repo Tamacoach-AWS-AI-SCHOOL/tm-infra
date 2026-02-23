@@ -179,6 +179,7 @@ resource "helm_release" "adot_collector" {
       tolerations  = local.addons_system_tolerations
       config = {
         extensions = {
+          health_check = {}
           sigv4auth = {
             region  = var.aws_region
             service = "aps"
@@ -310,7 +311,7 @@ resource "helm_release" "adot_collector" {
           }
         }
         service = {
-          extensions = ["sigv4auth"]
+          extensions = ["health_check", "sigv4auth"]
           pipelines = {
             metrics = {
               receivers  = ["prometheus"]
