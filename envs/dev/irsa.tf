@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "fluent_bit_logs" {
   }
 
   dynamic "statement" {
-    for_each = var.eks_log_kms_key_arn == null ? [] : [var.eks_log_kms_key_arn]
+    for_each = local.effective_eks_log_kms_key_arn == null ? [] : [local.effective_eks_log_kms_key_arn]
     content {
       sid    = "AllowKmsDecryptForEncryptedLogs"
       effect = "Allow"
