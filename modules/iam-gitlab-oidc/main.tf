@@ -193,6 +193,8 @@ data "aws_iam_policy_document" "plan_permissions" {
       "ssm:GetParameters",
       "ssm:GetParametersByPath",
       "ssm:ListTagsForResource",
+      "kms:DescribeKey",
+      "kms:ListAliases",
       "secretsmanager:DescribeSecret",
       "secretsmanager:GetSecretValue",
       "secretsmanager:GetResourcePolicy",
