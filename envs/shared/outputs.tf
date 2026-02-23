@@ -87,6 +87,19 @@ output "observability_sns_topic_arns" {
   }
 }
 
+output "observability_logs_kms_key_arn" {
+  description = "KMS key ARN for EKS control plane/application CloudWatch log groups."
+  value       = aws_kms_key.observability_logs.arn
+}
+
+output "observability_logs_readonly_policy_arns" {
+  description = "Environment-specific IAM policy ARNs for CloudWatch logs read-only access."
+  value = {
+    dev  = aws_iam_policy.observability_logs_readonly["dev"].arn
+    prod = aws_iam_policy.observability_logs_readonly["prod"].arn
+  }
+}
+
 output "cloudfront_certificate_arn" {
   description = "ACM certificate ARN for CloudFront (*.tamacoach.net, tamacoach.net) in us-east-1."
   value       = aws_acm_certificate_validation.tamacoach_shared_cloudfront.certificate_arn
