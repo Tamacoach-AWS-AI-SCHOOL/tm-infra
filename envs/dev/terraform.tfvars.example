@@ -8,6 +8,10 @@ enable_rbac           = true
 enable_jump_host      = true
 
 kubernetes_version = "1.30"
+control_plane_log_types         = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+control_plane_log_retention_days = 14
+enable_fluent_bit               = true
+# eks_log_kms_key_arn           = "arn:aws:kms:ap-northeast-2:123456789012:key/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 system_nodegroup_instance_types = ["t3.medium"]
 system_nodegroup_min_size       = 2
 system_nodegroup_max_size       = 4
