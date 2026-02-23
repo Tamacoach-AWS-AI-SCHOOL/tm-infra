@@ -35,6 +35,7 @@ jump_host_kubectl_version       = "1.30.0"
 
 # backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-domain-purpose"]
 # worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-domain-purpose"]
+# bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:123456789012:runtime/YourRuntimeName"
 # lbc_policy_arns / karpenter_policy_arns are optional overrides.
 # By default, Terraform creates and uses:
 # - AWSLoadBalancerControllerIAMPolicy-${project}-${env}
