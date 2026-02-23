@@ -74,11 +74,15 @@ resource "helm_release" "aws_for_fluent_bit" {
         create = false
         name   = "aws-for-fluent-bit"
       }
-      cloudWatch = {
+      cloudWatchLogs = {
         enabled         = true
         region          = var.aws_region
         logGroupName    = "${var.project}/${var.env}/eks/${local.addons_cluster_name}/application"
         logStreamPrefix = "fluent-bit-"
+        autoCreateGroup = false
+      }
+      cloudWatch = {
+        enabled = false
       }
       firehose = {
         enabled = false
