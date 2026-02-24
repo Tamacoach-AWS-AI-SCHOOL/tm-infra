@@ -83,6 +83,20 @@ locals {
           Action   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
           Resource = var.backend_queue_arns
         }
+      ] : [],
+      length(var.worker_queue_arns) > 0 ? [
+        {
+          Sid    = "AllowBackendQueueConsumeForWorkerRuntime"
+          Effect = "Allow"
+          Action = [
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage",
+            "sqs:ChangeMessageVisibility",
+            "sqs:GetQueueAttributes",
+            "sqs:GetQueueUrl",
+          ]
+          Resource = var.worker_queue_arns
+        }
       ] : []
     )
   })
@@ -113,6 +127,7 @@ locals {
             "sqs:DeleteMessage",
             "sqs:ChangeMessageVisibility",
             "sqs:GetQueueAttributes",
+            "sqs:GetQueueUrl",
           ]
           Resource = var.worker_queue_arns
         }

@@ -87,6 +87,26 @@ output "observability_sns_topic_arns" {
   }
 }
 
+output "tama_main_queue_arn" {
+  description = "Main SQS queue ARN for tama.fifo when DLQ is enabled."
+  value       = var.enable_tama_fifo_dlq ? data.aws_sqs_queue.tamacoach_main_fifo[0].arn : null
+}
+
+output "tama_main_queue_url" {
+  description = "Main SQS queue URL for tama.fifo when DLQ is enabled."
+  value       = var.enable_tama_fifo_dlq ? data.aws_sqs_queue.tamacoach_main_fifo[0].url : null
+}
+
+output "tama_dlq_queue_arn" {
+  description = "DLQ SQS queue ARN for tama.fifo."
+  value       = var.enable_tama_fifo_dlq ? aws_sqs_queue.tamacoach_main_dlq[0].arn : null
+}
+
+output "tama_dlq_queue_url" {
+  description = "DLQ SQS queue URL for tama.fifo."
+  value       = var.enable_tama_fifo_dlq ? aws_sqs_queue.tamacoach_main_dlq[0].url : null
+}
+
 output "observability_logs_kms_key_arn" {
   description = "KMS key ARN for EKS control plane/application CloudWatch log groups."
   value       = aws_kms_key.observability_logs.arn

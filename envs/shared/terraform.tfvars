@@ -64,6 +64,16 @@ observability_sqs_queue_arns = {
   prod = "arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"
 }
 
+enable_tama_fifo_dlq               = true
+tama_main_queue_name               = "tama.fifo"
+tama_dlq_queue_name                = "tama-dlq.fifo"
+tama_main_queue_max_receive_count  = 5
+tama_dlq_alarm_topic_key           = "dev"
+tama_dlq_alarm_threshold           = 1
+tama_dlq_alarm_period_seconds      = 120
+tama_dlq_alarm_evaluation_periods  = 1
+tama_dlq_alarm_datapoints_to_alarm = 1
+
 enable_observability_metrics_platform = true
 
 enable_security_services_platform = true
