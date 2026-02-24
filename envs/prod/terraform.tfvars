@@ -26,10 +26,16 @@ jump_host_instance_type         = "t3.small"
 jump_host_install_helm          = false
 jump_host_kubectl_version       = "1.30.0"
 
-# worker IRSA SQS consume 권한 대상
-# 필요 시 backend_queue_arns도 송신 대상 큐 ARN으로 채우세요.
-backend_queue_arns            = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
-worker_queue_arns             = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+# SQS publish/consume 분리(권장)
+# 현재는 동일 큐를 참조하고, 큐 분리 시 각각 값만 교체하면 됩니다.
+backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tama.fifo"]
+worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tama.fifo"]
+
+# backward compatibility (deprecated)
+backend_queue_arns            = []
+worker_queue_arns             = []
 bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:193629269600:runtime/MyPersonaReport-oUv99P70iW"
 
 # prod 접근 주체로 교체해서 사용
@@ -58,3 +64,4 @@ argocd_namespace                   = "argocd"
 argocd_controller_serviceaccount   = "argocd-application-controller"
 argocd_notifications_slack_channel = "deployments"
 enable_argocd_notifications_slack  = true
+
