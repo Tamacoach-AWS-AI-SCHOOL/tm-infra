@@ -225,6 +225,8 @@ data "aws_iam_policy_document" "plan_permissions" {
       "route53:List*",
       "cloudwatch:DescribeAlarms",
       "cloudwatch:ListTagsForResource",
+      "wafv2:Get*",
+      "wafv2:List*",
       "sns:GetTopicAttributes",
       "sns:GetSubscriptionAttributes",
       "sns:ListSubscriptionsByTopic",
