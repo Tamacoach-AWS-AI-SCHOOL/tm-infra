@@ -89,12 +89,12 @@ output "observability_sns_topic_arns" {
 
 output "tama_main_queue_arn" {
   description = "Main SQS queue ARN for tama.fifo when DLQ is enabled."
-  value       = var.enable_tama_fifo_dlq ? data.aws_sqs_queue.tamacoach_main_fifo[0].arn : null
+  value       = var.enable_tama_fifo_dlq ? var.tama_main_queue_arn : null
 }
 
 output "tama_main_queue_url" {
   description = "Main SQS queue URL for tama.fifo when DLQ is enabled."
-  value       = var.enable_tama_fifo_dlq ? data.aws_sqs_queue.tamacoach_main_fifo[0].url : null
+  value       = var.enable_tama_fifo_dlq ? var.tama_main_queue_url : null
 }
 
 output "tama_dlq_queue_arn" {
