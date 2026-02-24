@@ -366,6 +366,11 @@ variable "argocd_notifications_slack_webhook_url" {
   sensitive   = true
   default     = ""
 }
+variable "enable_argocd_notifications_slack" {
+  type        = bool
+  description = "Enable ArgoCD Slack notifications resources."
+  default     = false
+}
 
 variable "argocd_notifications_slack_channel" {
   type        = string
