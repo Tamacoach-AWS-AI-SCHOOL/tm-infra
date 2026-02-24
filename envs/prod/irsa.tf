@@ -55,6 +55,14 @@ locals {
   effective_cluster_name      = var.cluster_name != "" ? var.cluster_name : module.eks.cluster_name
   effective_oidc_provider_arn = var.oidc_provider_arn != "" ? var.oidc_provider_arn : module.eks.oidc_provider_arn
   effective_oidc_provider_url = var.oidc_provider_url != "" ? var.oidc_provider_url : module.eks.oidc_provider_url
+  backend_publish_queue_arns = distinct(compact(concat(
+    var.backend_publish_queue_arns,
+    var.backend_queue_arns,
+  )))
+  worker_consume_queue_arns = distinct(compact(concat(
+    var.worker_consume_queue_arns,
+    var.worker_queue_arns,
+  )))
   # Default to Terraform-managed IAM policies, but allow explicit override.
   lbc_effective_policy_arns       = try(length(var.lbc_policy_arns), 0) > 0 ? var.lbc_policy_arns : [aws_iam_policy.lbc.arn]
   karpenter_effective_policy_arns = try(length(var.karpenter_policy_arns), 0) > 0 ? var.karpenter_policy_arns : [aws_iam_policy.karpenter_controller.arn]
@@ -76,26 +84,12 @@ locals {
           Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.secrets_prefix}/*"
         }
       ],
-      length(var.backend_queue_arns) > 0 ? [
+      length(local.backend_publish_queue_arns) > 0 ? [
         {
           Sid      = "AllowBackendQueuePublish"
           Effect   = "Allow"
-          Action   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
-          Resource = var.backend_queue_arns
-        }
-      ] : [],
-      length(var.worker_queue_arns) > 0 ? [
-        {
-          Sid    = "AllowBackendQueueConsumeForWorkerRuntime"
-          Effect = "Allow"
-          Action = [
-            "sqs:ReceiveMessage",
-            "sqs:DeleteMessage",
-            "sqs:ChangeMessageVisibility",
-            "sqs:GetQueueAttributes",
-            "sqs:GetQueueUrl",
-          ]
-          Resource = var.worker_queue_arns
+          Action   = ["sqs:SendMessage"]
+          Resource = local.backend_publish_queue_arns
         }
       ] : []
     )
@@ -118,7 +112,7 @@ locals {
           Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${local.secrets_prefix}/*"
         }
       ],
-      length(var.worker_queue_arns) > 0 ? [
+      length(local.worker_consume_queue_arns) > 0 ? [
         {
           Sid    = "AllowWorkerQueueConsume"
           Effect = "Allow"
@@ -127,9 +121,8 @@ locals {
             "sqs:DeleteMessage",
             "sqs:ChangeMessageVisibility",
             "sqs:GetQueueAttributes",
-            "sqs:GetQueueUrl",
           ]
-          Resource = var.worker_queue_arns
+          Resource = local.worker_consume_queue_arns
         }
       ] : [],
       var.bedrock_agentcore_runtime_arn != "" ? [

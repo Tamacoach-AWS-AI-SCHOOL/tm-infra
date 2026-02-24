@@ -68,6 +68,26 @@ output "secrets_prefix" {
   value       = local.secrets_prefix
 }
 
+output "backend_publish_queue_arns_effective" {
+  description = "Effective backend publish queue ARNs used by IRSA policy."
+  value       = local.backend_publish_queue_arns
+}
+
+output "worker_consume_queue_arns_effective" {
+  description = "Effective worker consume queue ARNs used by IRSA policy."
+  value       = local.worker_consume_queue_arns
+}
+
+output "backend_publish_queue_urls_effective" {
+  description = "Effective backend publish queue URLs for runtime wiring."
+  value       = distinct(compact(var.backend_publish_queue_urls))
+}
+
+output "worker_consume_queue_urls_effective" {
+  description = "Effective worker consume queue URLs for runtime wiring."
+  value       = distinct(compact(var.worker_consume_queue_urls))
+}
+
 output "irsa_role_arns" {
   description = "IRSA role ARNs keyed by <namespace>/<serviceaccount>."
   value       = var.enable_irsa ? module.irsa[0].role_arns : {}
