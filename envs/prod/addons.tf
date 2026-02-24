@@ -573,6 +573,10 @@ resource "kubernetes_manifest" "argocd_notifications_secret" {
 resource "kubernetes_manifest" "argocd_notifications_cm" {
   for_each = var.enable_argocd_notifications_slack ? { main = true } : {}
 
+  field_manager {
+    force_conflicts = true
+  }
+
   manifest = {
     apiVersion = "v1"
     kind       = "ConfigMap"
