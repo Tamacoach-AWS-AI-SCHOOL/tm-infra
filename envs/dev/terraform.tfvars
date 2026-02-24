@@ -26,7 +26,7 @@ backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/19362926
 worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-dev-analysis-work.fifo"]
 
 # Optional: dev stack이 큐를 직접 생성/관리할 때만 true
-enable_dev_sqs_queue_split = false
+enable_dev_sqs_queue_split = true
 # dev_sqs_publish_queue_name            = "tamacoach-dev-analysis-work.fifo" # deprecated
 # dev_sqs_consume_queue_name            = "tamacoach-dev-analysis-work.fifo"
 # dev_sqs_consume_dlq_name              = "tamacoach-dev-analysis-work-dlq.fifo"
