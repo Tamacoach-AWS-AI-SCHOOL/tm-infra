@@ -89,4 +89,4 @@ argocd_controller_serviceaccount = "argocd-application-controller"
 #   },
 # ]
 #
-
+# enable_argocd_notifications_slack = true
