@@ -179,6 +179,46 @@ variable "worker_consume_queue_urls" {
   default     = []
 }
 
+variable "enable_prod_sqs_work_queue" {
+  type        = bool
+  description = "Create prod-local single work queue + DLQ."
+  default     = false
+}
+
+variable "prod_sqs_work_queue_name" {
+  type        = string
+  description = "Prod work queue name. Must end with .fifo."
+  default     = "tamacoach-prod-analysis-work.fifo"
+
+  validation {
+    condition     = endswith(var.prod_sqs_work_queue_name, ".fifo")
+    error_message = "prod_sqs_work_queue_name must end with .fifo."
+  }
+}
+
+variable "prod_sqs_work_dlq_name" {
+  type        = string
+  description = "Prod work DLQ name. Must end with .fifo."
+  default     = "tamacoach-prod-analysis-work-dlq.fifo"
+
+  validation {
+    condition     = endswith(var.prod_sqs_work_dlq_name, ".fifo")
+    error_message = "prod_sqs_work_dlq_name must end with .fifo."
+  }
+}
+
+variable "prod_sqs_work_visibility_timeout_seconds" {
+  type        = number
+  description = "Visibility timeout for prod work queue."
+  default     = 120
+}
+
+variable "prod_sqs_work_max_receive_count" {
+  type        = number
+  description = "maxReceiveCount for prod work queue redrive policy."
+  default     = 5
+}
+
 variable "bedrock_agentcore_runtime_arn" {
   type        = string
   description = "Bedrock AgentCore runtime ARN that worker is allowed to invoke."
