@@ -34,7 +34,7 @@ backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/19362926
 worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-prod-analysis-work.fifo"]
 
 # Optional: prod stack이 큐를 직접 생성/관리할 때만 true
-enable_prod_sqs_work_queue = false
+enable_prod_sqs_work_queue = true
 # prod_sqs_work_queue_name               = "tamacoach-prod-analysis-work.fifo"
 # prod_sqs_work_dlq_name                 = "tamacoach-prod-analysis-work-dlq.fifo"
 # prod_sqs_work_visibility_timeout_seconds = 120
