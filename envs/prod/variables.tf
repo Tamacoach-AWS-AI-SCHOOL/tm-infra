@@ -155,6 +155,12 @@ variable "worker_queue_arns" {
   default     = []
 }
 
+variable "bedrock_agentcore_runtime_arn" {
+  type        = string
+  description = "Bedrock AgentCore runtime ARN that worker is allowed to invoke."
+  default     = ""
+}
+
 variable "backend_db_password" {
   type        = string
   description = "Backend database password for RDS and Secrets Manager."
