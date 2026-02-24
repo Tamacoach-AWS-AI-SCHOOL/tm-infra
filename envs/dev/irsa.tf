@@ -56,7 +56,7 @@ locals {
   effective_oidc_provider_arn = var.oidc_provider_arn != "" ? var.oidc_provider_arn : module.eks.oidc_provider_arn
   effective_oidc_provider_url = var.oidc_provider_url != "" ? var.oidc_provider_url : module.eks.oidc_provider_url
   backend_publish_queue_arns = distinct(compact(concat(
-    var.enable_dev_sqs_queue_split ? [aws_sqs_queue.dev_publish[0].arn] : [],
+    var.enable_dev_sqs_queue_split ? [aws_sqs_queue.dev_consume[0].arn] : [],
     var.backend_publish_queue_arns,
     var.backend_queue_arns,
   )))
