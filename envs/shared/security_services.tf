@@ -78,7 +78,7 @@ resource "aws_macie2_classification_job" "daily" {
   count = var.enable_security_services_platform ? 1 : 0
 
   job_type = "SCHEDULED"
-  name     = "${local.name_prefix}-macie-daily"
+  name     = "${local.name_prefix}-macie-daily-v2"
 
   s3_job_definition {
     bucket_definitions {
@@ -92,7 +92,7 @@ resource "aws_macie2_classification_job" "daily" {
   }
 
   tags = merge(local.common_tags, {
-    Name    = "${local.name_prefix}-macie-daily"
+    Name    = "${local.name_prefix}-macie-daily-v2"
     Service = "security"
   })
 
