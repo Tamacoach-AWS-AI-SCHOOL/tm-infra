@@ -66,6 +66,8 @@ observability_sqs_queue_arns = {
 
 enable_tama_fifo_dlq               = true
 tama_main_queue_name               = "tama.fifo"
+tama_main_queue_url                = "https://sqs.ap-northeast-2.amazonaws.com/193629269600/tama.fifo"
+tama_main_queue_arn                = "arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"
 tama_dlq_queue_name                = "tama-dlq.fifo"
 tama_main_queue_max_receive_count  = 5
 tama_dlq_alarm_topic_key           = "dev"
