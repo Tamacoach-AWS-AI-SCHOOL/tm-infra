@@ -1,8 +1,3 @@
-data "aws_sqs_queue" "tamacoach_main_fifo" {
-  count = var.enable_tama_fifo_dlq ? 1 : 0
-  name  = var.tama_main_queue_name
-}
-
 resource "aws_sqs_queue" "tamacoach_main_dlq" {
   count = var.enable_tama_fifo_dlq ? 1 : 0
 
@@ -20,7 +15,7 @@ resource "aws_sqs_queue" "tamacoach_main_dlq" {
 resource "aws_sqs_queue_redrive_policy" "tamacoach_main_fifo" {
   count = var.enable_tama_fifo_dlq ? 1 : 0
 
-  queue_url = data.aws_sqs_queue.tamacoach_main_fifo[0].url
+  queue_url = var.tama_main_queue_url
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.tamacoach_main_dlq[0].arn
     maxReceiveCount     = var.tama_main_queue_max_receive_count
@@ -33,7 +28,7 @@ resource "aws_sqs_queue_redrive_allow_policy" "tamacoach_main_dlq" {
   queue_url = aws_sqs_queue.tamacoach_main_dlq[0].url
   redrive_allow_policy = jsonencode({
     redrivePermission = "byQueue"
-    sourceQueueArns   = [data.aws_sqs_queue.tamacoach_main_fifo[0].arn]
+    sourceQueueArns   = [var.tama_main_queue_arn]
   })
 }
 
