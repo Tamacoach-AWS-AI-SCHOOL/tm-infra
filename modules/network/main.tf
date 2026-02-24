@@ -65,13 +65,13 @@ locals {
   }
 
   interface_endpoint_services = {
-    ecr_api        = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
-    ecr_dkr        = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
-    logs           = "com.amazonaws.${data.aws_region.current.name}.logs"
-    ssm            = "com.amazonaws.${data.aws_region.current.name}.ssm"
-    ssmmessages    = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
-    ec2messages    = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
-    secretsmanager = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
+    ecr_api                   = "com.amazonaws.${data.aws_region.current.name}.ecr.api"
+    ecr_dkr                   = "com.amazonaws.${data.aws_region.current.name}.ecr.dkr"
+    logs                      = "com.amazonaws.${data.aws_region.current.name}.logs"
+    ssm                       = "com.amazonaws.${data.aws_region.current.name}.ssm"
+    ssmmessages               = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
+    ec2messages               = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
+    secretsmanager            = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
     bedrock_runtime           = "com.amazonaws.${data.aws_region.current.name}.bedrock-runtime"
     bedrock_agentcore         = "com.amazonaws.${data.aws_region.current.name}.bedrock-agentcore"
     bedrock_agentcore_gateway = "com.amazonaws.${data.aws_region.current.name}.bedrock-agentcore.gateway"
