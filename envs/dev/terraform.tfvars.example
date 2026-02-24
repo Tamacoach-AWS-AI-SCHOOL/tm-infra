@@ -33,6 +33,19 @@ jump_host_kubectl_version       = "1.30.0"
 #   "/tamacoach/dev/sqs/worker-task/url",
 # ]
 
+# Preferred split variables
+# backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-analysis-publish.fifo"]
+# worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-analysis-consume.fifo"]
+# backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/123456789012/tamacoach-dev-analysis-publish.fifo"]
+# worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/123456789012/tamacoach-dev-analysis-consume.fifo"]
+# enable_dev_sqs_queue_split = false
+# dev_sqs_publish_queue_name = "tamacoach-dev-analysis-publish.fifo"
+# dev_sqs_consume_queue_name = "tamacoach-dev-analysis-consume.fifo"
+# dev_sqs_consume_dlq_name   = "tamacoach-dev-analysis-consume-dlq.fifo"
+# dev_sqs_consume_visibility_timeout_seconds = 120
+# dev_sqs_consume_max_receive_count          = 5
+
+# Backward compatibility (deprecated)
 # backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-domain-purpose"]
 # worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-dev-domain-purpose"]
 # bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:123456789012:runtime/YourRuntimeName"
