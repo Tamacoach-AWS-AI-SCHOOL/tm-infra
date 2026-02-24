@@ -552,7 +552,7 @@ resource "helm_release" "argocd" {
 }
 
 resource "kubernetes_manifest" "argocd_notifications_secret" {
-  for_each = var.argocd_notifications_slack_webhook_url != "" ? { main = true } : {}
+  for_each = var.enable_argocd_notifications_slack ? { main = true } : {}
 
   manifest = {
     apiVersion = "v1"
@@ -571,7 +571,7 @@ resource "kubernetes_manifest" "argocd_notifications_secret" {
 }
 
 resource "kubernetes_manifest" "argocd_notifications_cm" {
-  for_each = var.argocd_notifications_slack_webhook_url != "" ? { main = true } : {}
+  for_each = var.enable_argocd_notifications_slack ? { main = true } : {}
 
   manifest = {
     apiVersion = "v1"
@@ -733,7 +733,7 @@ resource "kubernetes_manifest" "argocd_appproject_prod" {
     metadata = {
       name      = "prod"
       namespace = var.argocd_namespace
-      annotations = var.argocd_notifications_slack_webhook_url != "" ? {
+      annotations = var.enable_argocd_notifications_slack ? {
         "notifications.argoproj.io/subscribe.on-sync-succeeded.webhook"  = "slack"
         "notifications.argoproj.io/subscribe.on-sync-failed.webhook"     = "slack"
         "notifications.argoproj.io/subscribe.on-health-degraded.webhook" = "slack"
