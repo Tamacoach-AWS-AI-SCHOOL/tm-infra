@@ -28,8 +28,9 @@ jump_host_kubectl_version       = "1.30.0"
 
 # worker IRSA SQS consume 권한 대상
 # 필요 시 backend_queue_arns도 송신 대상 큐 ARN으로 채우세요.
-backend_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
-worker_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+backend_queue_arns            = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+worker_queue_arns             = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:193629269600:runtime/MyPersonaReport-oUv99P70iW"
 
 # prod 접근 주체로 교체해서 사용
 access_entries = [
