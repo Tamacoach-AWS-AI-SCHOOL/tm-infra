@@ -56,10 +56,12 @@ locals {
   effective_oidc_provider_arn = var.oidc_provider_arn != "" ? var.oidc_provider_arn : module.eks.oidc_provider_arn
   effective_oidc_provider_url = var.oidc_provider_url != "" ? var.oidc_provider_url : module.eks.oidc_provider_url
   backend_publish_queue_arns = distinct(compact(concat(
+    var.enable_prod_sqs_work_queue ? [aws_sqs_queue.prod_work[0].arn] : [],
     var.backend_publish_queue_arns,
     var.backend_queue_arns,
   )))
   worker_consume_queue_arns = distinct(compact(concat(
+    var.enable_prod_sqs_work_queue ? [aws_sqs_queue.prod_work[0].arn] : [],
     var.worker_consume_queue_arns,
     var.worker_queue_arns,
   )))

@@ -80,12 +80,18 @@ output "worker_consume_queue_arns_effective" {
 
 output "backend_publish_queue_urls_effective" {
   description = "Effective backend publish queue URLs for runtime wiring."
-  value       = distinct(compact(var.backend_publish_queue_urls))
+  value = distinct(compact(concat(
+    var.enable_prod_sqs_work_queue ? [aws_sqs_queue.prod_work[0].url] : [],
+    var.backend_publish_queue_urls,
+  )))
 }
 
 output "worker_consume_queue_urls_effective" {
   description = "Effective worker consume queue URLs for runtime wiring."
-  value       = distinct(compact(var.worker_consume_queue_urls))
+  value = distinct(compact(concat(
+    var.enable_prod_sqs_work_queue ? [aws_sqs_queue.prod_work[0].url] : [],
+    var.worker_consume_queue_urls,
+  )))
 }
 
 output "irsa_role_arns" {
