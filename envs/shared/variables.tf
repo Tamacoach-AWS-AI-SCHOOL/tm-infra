@@ -386,6 +386,18 @@ variable "front_alias_name" {
   default     = "tamacoach.net"
 }
 
+variable "enable_front_waf" {
+  type        = bool
+  description = "Attach WAFv2 Web ACL to frontend CloudFront distribution."
+  default     = false
+}
+
+variable "front_waf_rate_limit" {
+  type        = number
+  description = "Global per-IP rate limit over 5 minutes for CloudFront WAF."
+  default     = 2000
+}
+
 variable "cognito_manage_prod_existing" {
   type        = bool
   description = "Manage existing prod Cognito resources via Terraform (import required before apply)."
