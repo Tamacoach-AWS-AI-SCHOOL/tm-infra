@@ -23,7 +23,13 @@ jump_host_instance_type         = "t3.small"
 jump_host_install_helm          = false
 jump_host_kubectl_version       = "1.30.0"
 
-# 필요 시만 설정
+# Preferred split variables
+# backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-prod-analysis-publish.fifo"]
+# worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:123456789012:tamacoach-prod-analysis-consume.fifo"]
+# backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/123456789012/tamacoach-prod-analysis-publish.fifo"]
+# worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/123456789012/tamacoach-prod-analysis-consume.fifo"]
+
+# Backward compatibility (deprecated)
 backend_queue_arns = []
 worker_queue_arns  = []
 
