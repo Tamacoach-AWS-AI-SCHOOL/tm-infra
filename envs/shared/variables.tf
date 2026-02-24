@@ -253,6 +253,18 @@ variable "tama_main_queue_name" {
   default     = "tama.fifo"
 }
 
+variable "tama_main_queue_url" {
+  type        = string
+  description = "Existing main FIFO queue URL used for redrive policy attachment."
+  default     = ""
+}
+
+variable "tama_main_queue_arn" {
+  type        = string
+  description = "Existing main FIFO queue ARN used for redrive allow policy."
+  default     = ""
+}
+
 variable "tama_dlq_queue_name" {
   type        = string
   description = "DLQ FIFO queue name for main tama queue."
