@@ -226,3 +226,10 @@ check "shared_ssm_prefix_policy" {
     error_message = "envs/shared must not create app/sqs/obs SSM keys."
   }
 }
+
+check "tama_dlq_required_inputs" {
+  assert {
+    condition     = !var.enable_tama_fifo_dlq || (var.tama_main_queue_url != "" && var.tama_main_queue_arn != "")
+    error_message = "When enable_tama_fifo_dlq=true, set tama_main_queue_url and tama_main_queue_arn."
+  }
+}
