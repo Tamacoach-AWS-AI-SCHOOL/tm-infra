@@ -89,6 +89,7 @@ resource "aws_cloudfront_distribution" "tamacoach_shared_front_static" {
   comment             = "${local.name_prefix} static frontend"
   default_root_object = "index.html"
   aliases             = ["tamacoach.net", "app.tamacoach.net", "stage.tamacoach.net"]
+  web_acl_id          = var.enable_front_waf ? aws_wafv2_web_acl.tamacoach_shared_front[0].arn : null
 
   origin {
     domain_name              = aws_s3_bucket.tamacoach_shared_front_static.bucket_regional_domain_name
