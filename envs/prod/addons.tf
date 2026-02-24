@@ -581,6 +581,9 @@ resource "kubernetes_manifest" "argocd_notifications_cm" {
       namespace = var.argocd_namespace
     }
     data = {
+      "context" = join("\n", [
+        "argocdUrl: https://${var.argocd_domain_name}",
+      ])
       "service.webhook.slack" = join("\n", [
         "url: $slack-webhook",
         "headers:",
