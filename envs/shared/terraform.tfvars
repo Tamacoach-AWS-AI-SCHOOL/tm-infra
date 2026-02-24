@@ -82,3 +82,6 @@ enable_security_services_platform = true
 macie_target_bucket_names = [
   "tamacoach-shared-front-static-193629269600",
 ]
+
+enable_front_waf     = true
+front_waf_rate_limit = 2000
