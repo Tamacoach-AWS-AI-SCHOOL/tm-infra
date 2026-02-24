@@ -72,6 +72,9 @@ locals {
     ssmmessages    = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
     ec2messages    = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
     secretsmanager = "com.amazonaws.${data.aws_region.current.name}.secretsmanager"
+    bedrock_runtime           = "com.amazonaws.${data.aws_region.current.name}.bedrock-runtime"
+    bedrock_agentcore         = "com.amazonaws.${data.aws_region.current.name}.bedrock-agentcore"
+    bedrock_agentcore_gateway = "com.amazonaws.${data.aws_region.current.name}.bedrock-agentcore.gateway"
   }
 }
 
