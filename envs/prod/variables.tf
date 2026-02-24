@@ -155,6 +155,30 @@ variable "worker_queue_arns" {
   default     = []
 }
 
+variable "backend_publish_queue_arns" {
+  type        = list(string)
+  description = "Queue ARNs that backend is allowed to publish to (preferred over backend_queue_arns)."
+  default     = []
+}
+
+variable "worker_consume_queue_arns" {
+  type        = list(string)
+  description = "Queue ARNs that worker is allowed to consume from (preferred over worker_queue_arns)."
+  default     = []
+}
+
+variable "backend_publish_queue_urls" {
+  type        = list(string)
+  description = "Publish queue URLs for backend/runtime configuration."
+  default     = []
+}
+
+variable "worker_consume_queue_urls" {
+  type        = list(string)
+  description = "Consume queue URLs for worker/runtime configuration."
+  default     = []
+}
+
 variable "bedrock_agentcore_runtime_arn" {
   type        = string
   description = "Bedrock AgentCore runtime ARN that worker is allowed to invoke."
