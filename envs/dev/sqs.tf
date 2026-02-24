@@ -1,17 +1,3 @@
-resource "aws_sqs_queue" "dev_publish" {
-  count = var.enable_dev_sqs_queue_split ? 1 : 0
-
-  name                        = var.dev_sqs_publish_queue_name
-  fifo_queue                  = true
-  content_based_deduplication = false
-
-  tags = merge(local.common_tags, {
-    Name    = var.dev_sqs_publish_queue_name
-    Service = "backend"
-    Purpose = "analysis-publish"
-  })
-}
-
 resource "aws_sqs_queue" "dev_consume_dlq" {
   count = var.enable_dev_sqs_queue_split ? 1 : 0
 
@@ -40,7 +26,7 @@ resource "aws_sqs_queue" "dev_consume" {
 
   tags = merge(local.common_tags, {
     Name    = var.dev_sqs_consume_queue_name
-    Service = "worker"
-    Purpose = "analysis-consume"
+    Service = "app"
+    Purpose = "analysis-work"
   })
 }

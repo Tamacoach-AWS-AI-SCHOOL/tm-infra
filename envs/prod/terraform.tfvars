@@ -27,11 +27,18 @@ jump_host_install_helm          = false
 jump_host_kubectl_version       = "1.30.0"
 
 # SQS publish/consume 분리(권장)
-# 현재는 동일 큐를 참조하고, 큐 분리 시 각각 값만 교체하면 됩니다.
-backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
-worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
-backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tama.fifo"]
-worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tama.fifo"]
+# 단일 작업 큐 설계: 같은 환경에서는 publish/consume이 동일 큐를 가리킵니다.
+backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tamacoach-prod-analysis-work.fifo"]
+worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tamacoach-prod-analysis-work.fifo"]
+backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-prod-analysis-work.fifo"]
+worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-prod-analysis-work.fifo"]
+
+# Optional: prod stack이 큐를 직접 생성/관리할 때만 true
+enable_prod_sqs_work_queue = false
+# prod_sqs_work_queue_name               = "tamacoach-prod-analysis-work.fifo"
+# prod_sqs_work_dlq_name                 = "tamacoach-prod-analysis-work-dlq.fifo"
+# prod_sqs_work_visibility_timeout_seconds = 120
+# prod_sqs_work_max_receive_count          = 5
 
 # backward compatibility (deprecated)
 backend_queue_arns            = []
