@@ -51,7 +51,8 @@ access_entries = [
   }
 ]
 
-apps_namespace                   = "apps"
-platform_namespace               = "platform"
-argocd_namespace                 = "argocd"
-argocd_controller_serviceaccount = "argocd-application-controller"
+apps_namespace                     = "apps"
+platform_namespace                 = "platform"
+argocd_namespace                   = "argocd"
+argocd_controller_serviceaccount   = "argocd-application-controller"
+argocd_notifications_slack_channel = "deployments"

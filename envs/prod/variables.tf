@@ -360,6 +360,19 @@ variable "argocd_ingress_allowed_cidrs" {
   default     = ["118.218.200.33/32", "210.126.10.241/32"]
 }
 
+variable "argocd_notifications_slack_webhook_url" {
+  type        = string
+  description = "Slack incoming webhook URL for ArgoCD notifications."
+  sensitive   = true
+  default     = ""
+}
+
+variable "argocd_notifications_slack_channel" {
+  type        = string
+  description = "Slack channel name (without #) for ArgoCD notifications."
+  default     = "deployments"
+}
+
 variable "enable_jump_host" {
   type        = bool
   description = "Enable SSM-based jump host in private subnet."
