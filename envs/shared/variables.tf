@@ -241,6 +241,65 @@ variable "observability_sqs_queue_arns" {
   }
 }
 
+variable "enable_tama_fifo_dlq" {
+  type        = bool
+  description = "Enable DLQ + redrive policy for existing tama.fifo queue."
+  default     = false
+}
+
+variable "tama_main_queue_name" {
+  type        = string
+  description = "Existing main FIFO queue name to attach redrive policy."
+  default     = "tama.fifo"
+}
+
+variable "tama_dlq_queue_name" {
+  type        = string
+  description = "DLQ FIFO queue name for main tama queue."
+  default     = "tama-dlq.fifo"
+}
+
+variable "tama_main_queue_max_receive_count" {
+  type        = number
+  description = "Maximum receive attempts before moving message to DLQ."
+  default     = 5
+}
+
+variable "tama_dlq_alarm_topic_key" {
+  type        = string
+  description = "SNS topic key used for DLQ visible message alarm."
+  default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "prod"], var.tama_dlq_alarm_topic_key)
+    error_message = "tama_dlq_alarm_topic_key must be one of: dev, prod."
+  }
+}
+
+variable "tama_dlq_alarm_threshold" {
+  type        = number
+  description = "Threshold for DLQ visible messages alarm."
+  default     = 1
+}
+
+variable "tama_dlq_alarm_period_seconds" {
+  type        = number
+  description = "CloudWatch period seconds for DLQ visible messages alarm."
+  default     = 120
+}
+
+variable "tama_dlq_alarm_evaluation_periods" {
+  type        = number
+  description = "Evaluation periods for DLQ visible messages alarm."
+  default     = 1
+}
+
+variable "tama_dlq_alarm_datapoints_to_alarm" {
+  type        = number
+  description = "Datapoints to alarm for DLQ visible messages alarm."
+  default     = 1
+}
+
 variable "enable_observability_metrics_platform" {
   type        = bool
   description = "Enable AMP/AMG based metrics platform resources in shared stack."
