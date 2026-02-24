@@ -562,8 +562,8 @@ resource "kubernetes_manifest" "argocd_notifications_secret" {
       namespace = var.argocd_namespace
     }
     type = "Opaque"
-    stringData = {
-      "slack-webhook" = var.argocd_notifications_slack_webhook_url
+    data = {
+      "slack-webhook" = base64encode(var.argocd_notifications_slack_webhook_url)
     }
   }
 
