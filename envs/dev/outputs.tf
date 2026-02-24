@@ -81,7 +81,7 @@ output "worker_consume_queue_arns_effective" {
 output "backend_publish_queue_urls_effective" {
   description = "Effective backend publish queue URLs for runtime wiring."
   value = distinct(compact(concat(
-    var.enable_dev_sqs_queue_split ? [aws_sqs_queue.dev_publish[0].url] : [],
+    var.enable_dev_sqs_queue_split ? [aws_sqs_queue.dev_consume[0].url] : [],
     var.backend_publish_queue_urls,
   )))
 }
