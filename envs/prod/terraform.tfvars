@@ -26,10 +26,23 @@ jump_host_instance_type         = "t3.small"
 jump_host_install_helm          = false
 jump_host_kubectl_version       = "1.30.0"
 
-# worker IRSA SQS consume 권한 대상
-# 필요 시 backend_queue_arns도 송신 대상 큐 ARN으로 채우세요.
-backend_queue_arns            = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
-worker_queue_arns             = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+# SQS publish/consume 분리(권장)
+# 단일 작업 큐 설계: 같은 환경에서는 publish/consume이 동일 큐를 가리킵니다.
+backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tamacoach-prod-analysis-work.fifo"]
+worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tamacoach-prod-analysis-work.fifo"]
+backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-prod-analysis-work.fifo"]
+worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-prod-analysis-work.fifo"]
+
+# Optional: prod stack이 큐를 직접 생성/관리할 때만 true
+enable_prod_sqs_work_queue = true
+prod_sqs_work_queue_name   = "tamacoach-prod-analysis-work.fifo"
+prod_sqs_work_dlq_name     = "tamacoach-prod-analysis-work-dlq.fifo"
+# prod_sqs_work_visibility_timeout_seconds = 120
+# prod_sqs_work_max_receive_count          = 5
+
+# backward compatibility (deprecated)
+backend_queue_arns            = []
+worker_queue_arns             = []
 bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:193629269600:runtime/MyPersonaReport-oUv99P70iW"
 
 # prod 접근 주체로 교체해서 사용
@@ -58,3 +71,4 @@ argocd_namespace                   = "argocd"
 argocd_controller_serviceaccount   = "argocd-application-controller"
 argocd_notifications_slack_channel = "deployments"
 enable_argocd_notifications_slack  = true
+

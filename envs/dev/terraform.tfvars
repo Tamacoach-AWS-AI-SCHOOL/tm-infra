@@ -18,10 +18,24 @@ enable_adot_irsa             = true
 enable_external_secrets_irsa = false
 enable_argocd_repo_creds     = true
 
-# worker IRSA SQS consume 권한 대상
-# dev 전용 큐가 있으면 ARN을 교체하세요.
-backend_queue_arns            = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
-worker_queue_arns             = ["arn:aws:sqs:ap-northeast-2:193629269600:tama.fifo"]
+# SQS publish/consume 분리(권장)
+# 단일 작업 큐 설계: 같은 환경에서는 publish/consume이 동일 큐를 가리킵니다.
+backend_publish_queue_arns = ["arn:aws:sqs:ap-northeast-2:193629269600:tamacoach-dev-analysis-consume.fifo"]
+worker_consume_queue_arns  = ["arn:aws:sqs:ap-northeast-2:193629269600:tamacoach-dev-analysis-consume.fifo"]
+backend_publish_queue_urls = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-dev-analysis-consume.fifo"]
+worker_consume_queue_urls  = ["https://sqs.ap-northeast-2.amazonaws.com/193629269600/tamacoach-dev-analysis-consume.fifo"]
+
+# Optional: dev stack이 큐를 직접 생성/관리할 때만 true
+enable_dev_sqs_queue_split = true
+dev_sqs_publish_queue_name = "tamacoach-dev-analysis-consume.fifo" # deprecated
+dev_sqs_consume_queue_name = "tamacoach-dev-analysis-consume.fifo"
+dev_sqs_consume_dlq_name   = "tamacoach-dev-analysis-consume-dlq.fifo"
+# dev_sqs_consume_visibility_timeout_seconds = 120
+# dev_sqs_consume_max_receive_count         = 5
+
+# backward compatibility (deprecated)
+backend_queue_arns            = []
+worker_queue_arns             = []
 bedrock_agentcore_runtime_arn = "arn:aws:bedrock-agentcore:ap-northeast-2:193629269600:runtime/MyPersonaReport-oUv99P70iW"
 
 access_entries = [
