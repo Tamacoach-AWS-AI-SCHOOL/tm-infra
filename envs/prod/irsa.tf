@@ -101,6 +101,11 @@ locals {
           Action = ["bedrock:InvokeModel"]
           Resource = [
             "arn:aws:bedrock:ap-northeast-2::foundation-model/amazon.titan-embed-text-v2:0",
+            "arn:aws:bedrock:ap-northeast-2::foundation-model/anthropic.claude-sonnet-4-6",
+            "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6",
+            "arn:aws:bedrock:::foundation-model/anthropic.*",
+            "arn:aws:bedrock:ap-northeast-2:193629269600:inference-profile/global.anthropic.claude-sonnet-4-6",
+            "arn:aws:bedrock:ap-northeast-2:193629269600:inference-profile/*",
           ]
         }
       ]
