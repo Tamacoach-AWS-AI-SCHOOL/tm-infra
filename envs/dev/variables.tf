@@ -155,6 +155,81 @@ variable "worker_queue_arns" {
   default     = []
 }
 
+variable "backend_publish_queue_arns" {
+  type        = list(string)
+  description = "Queue ARNs that backend is allowed to publish to (preferred over backend_queue_arns)."
+  default     = []
+}
+
+variable "worker_consume_queue_arns" {
+  type        = list(string)
+  description = "Queue ARNs that worker is allowed to consume from (preferred over worker_queue_arns)."
+  default     = []
+}
+
+variable "backend_publish_queue_urls" {
+  type        = list(string)
+  description = "Publish queue URLs for backend/runtime configuration."
+  default     = []
+}
+
+variable "worker_consume_queue_urls" {
+  type        = list(string)
+  description = "Consume queue URLs for worker/runtime configuration."
+  default     = []
+}
+
+variable "enable_dev_sqs_queue_split" {
+  type        = bool
+  description = "Create dev-local split SQS queues (publish/consume + consume DLQ)."
+  default     = false
+}
+
+variable "dev_sqs_publish_queue_name" {
+  type        = string
+  description = "Dev publish queue name. Must end with .fifo."
+  default     = "tamacoach-dev-analysis-publish.fifo"
+
+  validation {
+    condition     = endswith(var.dev_sqs_publish_queue_name, ".fifo")
+    error_message = "dev_sqs_publish_queue_name must end with .fifo."
+  }
+}
+
+variable "dev_sqs_consume_queue_name" {
+  type        = string
+  description = "Dev consume queue name. Must end with .fifo."
+  default     = "tamacoach-dev-analysis-consume.fifo"
+
+  validation {
+    condition     = endswith(var.dev_sqs_consume_queue_name, ".fifo")
+    error_message = "dev_sqs_consume_queue_name must end with .fifo."
+  }
+}
+
+variable "dev_sqs_consume_dlq_name" {
+  type        = string
+  description = "Dev consume DLQ name. Must end with .fifo."
+  default     = "tamacoach-dev-analysis-consume-dlq.fifo"
+
+  validation {
+    condition     = endswith(var.dev_sqs_consume_dlq_name, ".fifo")
+    error_message = "dev_sqs_consume_dlq_name must end with .fifo."
+  }
+}
+
+variable "dev_sqs_consume_visibility_timeout_seconds" {
+  type        = number
+  description = "Visibility timeout for dev consume queue."
+  default     = 120
+}
+
+variable "dev_sqs_consume_max_receive_count" {
+  type        = number
+  description = "maxReceiveCount for consume queue redrive policy."
+  default     = 5
+}
+
 variable "bedrock_agentcore_runtime_arn" {
   type        = string
   description = "Bedrock AgentCore runtime ARN that worker is allowed to invoke."
