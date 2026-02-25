@@ -94,6 +94,16 @@ locals {
           Resource = local.backend_publish_queue_arns
         }
       ] : [],
+      [
+        {
+          Sid    = "AllowBackendInvokeBedrockTitanEmbed"
+          Effect = "Allow"
+          Action = ["bedrock:InvokeModel"]
+          Resource = [
+            "arn:aws:bedrock:ap-northeast-2::foundation-model/amazon.titan-embed-text-v2:0",
+          ]
+        }
+      ],
       var.bedrock_agentcore_runtime_arn != "" ? [
         {
           Sid    = "AllowBackendInvokeAgentCoreForWorkerRuntime"
