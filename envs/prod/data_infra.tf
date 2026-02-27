@@ -72,10 +72,32 @@ resource "aws_s3_bucket" "tamacoach_backend_storage" {
   })
 }
 
+resource "aws_s3_bucket" "tamacoach_selfcheck_upload" {
+  for_each = local.backend_envs
+
+  bucket        = "tamacoach-selfcheck-upload-${each.key}-${data.aws_caller_identity.current.account_id}"
+  force_destroy = false
+
+  tags = merge(local.common_tags, {
+    Name        = "tamacoach-selfcheck-upload-${each.key}-${data.aws_caller_identity.current.account_id}"
+    Environment = each.key
+    Purpose     = "selfcheck-upload"
+  })
+}
+
 resource "aws_s3_bucket_versioning" "tamacoach_backend_storage" {
   for_each = local.backend_envs
 
   bucket = aws_s3_bucket.tamacoach_backend_storage[each.key].id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "tamacoach_selfcheck_upload" {
+  for_each = local.backend_envs
+
+  bucket = aws_s3_bucket.tamacoach_selfcheck_upload[each.key].id
   versioning_configuration {
     status = "Enabled"
   }
@@ -93,6 +115,47 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tamacoach_backend
   }
 }
 
+resource "aws_s3_bucket_server_side_encryption_configuration" "tamacoach_selfcheck_upload" {
+  for_each = local.backend_envs
+
+  bucket = aws_s3_bucket.tamacoach_selfcheck_upload[each.key].id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+    bucket_key_enabled = true
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "tamacoach_selfcheck_upload" {
+  for_each = local.backend_envs
+
+  bucket = aws_s3_bucket.tamacoach_selfcheck_upload[each.key].id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_cors_configuration" "tamacoach_selfcheck_upload" {
+  for_each = local.backend_envs
+
+  bucket = aws_s3_bucket.tamacoach_selfcheck_upload[each.key].id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET", "HEAD", "POST", "PUT"]
+    allowed_origins = [
+      "https://tamacoach.net",
+      "https://app.tamacoach.net",
+      "https://stage.tamacoach.net",
+    ]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3000
+  }
+}
+
 resource "aws_secretsmanager_secret" "tamacoach_backend" {
   for_each = local.backend_envs
 
@@ -101,21 +164,6 @@ resource "aws_secretsmanager_secret" "tamacoach_backend" {
   tags = merge(local.common_tags, {
     Name        = "backend-${each.key}-${var.project}-secrets"
     Environment = each.key
-  })
-}
-
-resource "aws_secretsmanager_secret_version" "tamacoach_backend" {
-  for_each = local.backend_envs
-
-  secret_id = aws_secretsmanager_secret.tamacoach_backend[each.key].id
-  secret_string = jsonencode({
-    host       = aws_db_instance.tamacoach_backend[each.key].address
-    dbname     = local.backend_db_name
-    username   = var.backend_db_username
-    password   = var.backend_db_password
-    port       = 5432
-    APP_ENV    = each.key
-    AWS_REGION = var.aws_region
   })
 }
 
@@ -134,6 +182,24 @@ data "aws_iam_policy_document" "tamacoach_backend_data" {
     resources = [
       aws_s3_bucket.tamacoach_backend_storage[each.key].arn,
       "${aws_s3_bucket.tamacoach_backend_storage[each.key].arn}/*",
+    ]
+  }
+
+  statement {
+    sid    = "AllowSelfcheckUploadReadWrite"
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:AbortMultipartUpload",
+      "s3:ListBucketMultipartUploads",
+      "s3:ListMultipartUploadParts",
+    ]
+    resources = [
+      aws_s3_bucket.tamacoach_selfcheck_upload[each.key].arn,
+      "${aws_s3_bucket.tamacoach_selfcheck_upload[each.key].arn}/selfcheck/*",
     ]
   }
 
