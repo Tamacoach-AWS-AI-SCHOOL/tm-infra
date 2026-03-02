@@ -85,3 +85,6 @@ macie_target_bucket_names = [
 
 enable_front_waf     = true
 front_waf_rate_limit = 2000
+front_waf_loadtest_allowlist_cidrs = [
+  "43.201.2.133/32", # k6 load test server (temporary)
+]
