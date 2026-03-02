@@ -300,6 +300,7 @@ resource "aws_flow_log" "vpc" {
   iam_role_arn         = aws_iam_role.flow_logs.arn
 
   tags = {
+    Name        = "${local.naming_project_prefix}-${local.shared_env}-vpc-flow-log"
     Environment = "shared"
   }
 }
