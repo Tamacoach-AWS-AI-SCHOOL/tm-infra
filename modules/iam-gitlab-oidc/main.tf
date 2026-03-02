@@ -500,6 +500,7 @@ data "aws_iam_policy_document" "apply_permissions" {
       "dynamodb:CreateTable",
       "dynamodb:UpdateTable",
       "dynamodb:DeleteTable",
+      "dynamodb:DescribeTable",
       "dynamodb:TagResource",
       "dynamodb:UntagResource",
       "rds:CreateDBInstance",
