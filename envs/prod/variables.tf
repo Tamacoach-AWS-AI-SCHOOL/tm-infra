@@ -430,9 +430,9 @@ variable "argocd_ingress_allowed_cidrs" {
   default     = ["118.218.200.33/32", "210.126.10.241/32"]
 }
 
-variable "argocd_notifications_slack_webhook_url" {
+variable "argocd_notifications_slack_token" {
   type        = string
-  description = "Slack incoming webhook URL for ArgoCD notifications."
+  description = "Slack bot token for ArgoCD notifications (xoxb-...)."
   sensitive   = true
   default     = ""
 }

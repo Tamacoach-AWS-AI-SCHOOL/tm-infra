@@ -563,7 +563,7 @@ resource "kubernetes_manifest" "argocd_notifications_secret" {
     }
     type = "Opaque"
     data = {
-      "slack-webhook" = base64encode(var.argocd_notifications_slack_webhook_url)
+      "slack-token" = base64encode(var.argocd_notifications_slack_token)
     }
   }
 
@@ -588,45 +588,30 @@ resource "kubernetes_manifest" "argocd_notifications_cm" {
       "context" = join("\n", [
         "argocdUrl: https://${var.argocd_domain_name}",
       ])
-      "service.webhook.slack" = join("\n", [
-        "url: $slack-webhook",
-        "headers:",
-        "  - name: Content-Type",
-        "    value: application/json",
+      "service.slack" = join("\n", [
+        "token: $slack-token",
       ])
       "template.app-sync-succeeded" = join("\n", [
-        "webhook:",
-        "  slack:",
-        "    method: POST",
-        "    body: |",
-        "      {\"channel\":\"#${var.argocd_notifications_slack_channel}\",\"text\":\"[prod] ArgoCD sync succeeded: {{.app.metadata.name}} (rev: {{.app.status.sync.revision}})\"}",
+        "message: \"[prod] ArgoCD sync succeeded: {{.app.metadata.name}} (rev: {{.app.status.sync.revision}})\"",
       ])
       "template.app-sync-failed" = join("\n", [
-        "webhook:",
-        "  slack:",
-        "    method: POST",
-        "    body: |",
-        "      {\"channel\":\"#${var.argocd_notifications_slack_channel}\",\"text\":\"[prod] ArgoCD sync failed: {{.app.metadata.name}}\"}",
+        "message: \"[prod] ArgoCD sync failed: {{.app.metadata.name}}\"",
       ])
       "template.app-health-degraded" = join("\n", [
-        "webhook:",
-        "  slack:",
-        "    method: POST",
-        "    body: |",
-        "      {\"channel\":\"#${var.argocd_notifications_slack_channel}\",\"text\":\"[prod] ArgoCD health degraded: {{.app.metadata.name}} (health: {{.app.status.health.status}})\"}",
+        "message: \"[prod] ArgoCD health degraded: {{.app.metadata.name}} (health: {{.app.status.health.status}})\"",
       ])
       "trigger.on-sync-succeeded" = join("\n", [
         "- description: Application sync succeeded and healthy",
         "  oncePer: app.status.sync.revision",
         "  send:",
         "  - app-sync-succeeded",
-        "  when: app.status.operationState.phase in ['Succeeded'] && app.status.health.status == 'Healthy'",
+        "  when: app.status.operationState != nil && app.status.operationState.phase in ['Succeeded'] && app.status.health.status == 'Healthy'",
       ])
       "trigger.on-sync-failed" = join("\n", [
         "- description: Application sync failed",
         "  send:",
         "  - app-sync-failed",
-        "  when: app.status.operationState.phase in ['Error', 'Failed']",
+        "  when: app.status.operationState != nil && app.status.operationState.phase in ['Error', 'Failed']",
       ])
       "trigger.on-health-degraded" = join("\n", [
         "- description: Application health degraded",
@@ -741,9 +726,9 @@ resource "kubernetes_manifest" "argocd_appproject_prod" {
       name      = "prod"
       namespace = var.argocd_namespace
       annotations = var.enable_argocd_notifications_slack ? {
-        "notifications.argoproj.io/subscribe.on-sync-succeeded.webhook"  = "slack"
-        "notifications.argoproj.io/subscribe.on-sync-failed.webhook"     = "slack"
-        "notifications.argoproj.io/subscribe.on-health-degraded.webhook" = "slack"
+        "notifications.argoproj.io/subscribe.on-sync-succeeded.slack"  = var.argocd_notifications_slack_channel
+        "notifications.argoproj.io/subscribe.on-sync-failed.slack"     = var.argocd_notifications_slack_channel
+        "notifications.argoproj.io/subscribe.on-health-degraded.slack" = var.argocd_notifications_slack_channel
       } : {}
     }
     spec = {
