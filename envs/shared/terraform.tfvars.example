@@ -83,3 +83,4 @@ amg_workspace_name                    = "tamacoach-shared-grafana"
 # CloudFront WAF (scope=CLOUDFRONT, created in us-east-1)
 # enable_front_waf     = true
 # front_waf_rate_limit = 2000
+# front_waf_loadtest_allowlist_cidrs = ["43.201.2.133/32"] # temporary during load test
