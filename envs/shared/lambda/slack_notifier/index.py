@@ -7,6 +7,48 @@ import boto3
 
 ssm = boto3.client("ssm")
 
+DEFAULT_GRAFANA_URL = "https://g-ae8080edb2.grafana-workspace.ap-northeast-2.amazonaws.com/dashboards"
+DEFAULT_LOGS_URL = "https://ap-northeast-2.console.aws.amazon.com/cloudwatch/home?region=ap-northeast-2#logsV2:logs-insights"
+DEFAULT_RUNBOOK_URL = "https://github.com/tamacoach/tm-infra/tree/develop/docs"
+
+# env + alarm/finding name mapping for runbook/dashboard/log links
+ALERT_LINKS = {
+    "prod": {
+        "tamacoach-prod-apigw-latency-p95": {
+            "runbook_url": "https://github.com/tamacoach/tm-infra/blob/develop/docs/runbook-apigateway-latency-5xx.md",
+            "grafana_url": DEFAULT_GRAFANA_URL,
+            "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+        },
+        "tamacoach-prod-apigw-5xx": {
+            "runbook_url": "https://github.com/tamacoach/tm-infra/blob/develop/docs/runbook-apigateway-latency-5xx.md",
+            "grafana_url": DEFAULT_GRAFANA_URL,
+            "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+        },
+        "tamacoach-prod-rds-cpu": {
+            "runbook_url": "https://github.com/tamacoach/tm-infra/blob/develop/docs/runbook-rds-cpu-storage-alarm.md",
+            "grafana_url": DEFAULT_GRAFANA_URL,
+            "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+        },
+        "tamacoach-prod-rds-free-storage": {
+            "runbook_url": "https://github.com/tamacoach/tm-infra/blob/develop/docs/runbook-rds-cpu-storage-alarm.md",
+            "grafana_url": DEFAULT_GRAFANA_URL,
+            "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+        },
+    },
+    "dev": {
+        "tamacoach-dev-apigw-latency-p95": {
+            "runbook_url": "https://github.com/tamacoach/tm-infra/blob/develop/docs/runbook-apigateway-latency-5xx.md",
+            "grafana_url": DEFAULT_GRAFANA_URL,
+            "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+        },
+        "tamacoach-dev-apigw-5xx": {
+            "runbook_url": "https://github.com/tamacoach/tm-infra/blob/develop/docs/runbook-apigateway-latency-5xx.md",
+            "grafana_url": DEFAULT_GRAFANA_URL,
+            "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+        },
+    },
+}
+
 
 def get_webhook_url():
     param_name = os.environ["SLACK_WEBHOOK_SSM_PARAM"]
@@ -30,6 +72,8 @@ def extract_fields(payload, default_env):
     severity = "P2"
     title = "Alert"
     link = ""
+    resource = "-"
+    datapoint = "-"
 
     if isinstance(payload, dict):
         source = payload.get("source", "")
@@ -41,6 +85,7 @@ def extract_fields(payload, default_env):
             service = payload.get("Trigger", {}).get("Namespace", "cloudwatch")
             # alarm_description contains "severity=P1 ..."
             alarm_description = payload.get("AlarmDescription", "")
+            env = payload.get("AlarmName", "").split("-")[1] if "-" in payload.get("AlarmName", "") else env
             if "severity=P1" in alarm_description:
                 severity = "P1"
             elif "severity=P0" in alarm_description:
@@ -48,6 +93,10 @@ def extract_fields(payload, default_env):
             else:
                 severity = "P2"
             link = reason
+            resource = payload.get("Trigger", {}).get("MetricName", "-")
+            datapoint = payload.get("NewStateReason", "-")
+            if payload.get("NewStateValue") == "OK" and severity in {"P0", "P1"}:
+                severity = "INFO"
 
         # SecurityHub EventBridge
         elif source == "aws.securityhub":
@@ -60,6 +109,8 @@ def extract_fields(payload, default_env):
             )
             severity = str(sev) if sev is not None else "HIGH"
             link = finding.get("ProductArn", "")
+            resource = finding.get("Id", "-")
+            datapoint = finding.get("Title", "-")
 
         # GuardDuty EventBridge
         elif source == "aws.guardduty":
@@ -68,6 +119,8 @@ def extract_fields(payload, default_env):
             numeric = payload.get("detail", {}).get("severity", 0)
             severity = "CRITICAL" if float(numeric) >= 8 else "HIGH"
             link = payload.get("detail", {}).get("id", "")
+            resource = payload.get("detail", {}).get("resource", {}).get("resourceType", "-")
+            datapoint = f"score={numeric}"
 
         # Custom message shape
         else:
@@ -76,10 +129,24 @@ def extract_fields(payload, default_env):
             severity = payload.get("severity", severity)
             title = payload.get("title", title)
             link = payload.get("link", link)
+            resource = payload.get("resource", resource)
+            datapoint = payload.get("datapoint", datapoint)
     else:
         title = str(payload)
 
-    return env, service, str(severity), title, link
+    return env, service, str(severity), title, link, resource, datapoint
+
+
+def resolve_links(env, title):
+    env_map = ALERT_LINKS.get(env, {})
+    link_set = env_map.get(title)
+    if link_set:
+        return link_set
+    return {
+        "runbook_url": DEFAULT_RUNBOOK_URL,
+        "grafana_url": DEFAULT_GRAFANA_URL,
+        "cloudwatch_logs_insights_url": DEFAULT_LOGS_URL,
+    }
 
 
 def mention_for(severity):
@@ -111,13 +178,18 @@ def handler(event, context):
 
     for r in records:
         payload = parse_payload(r)
-        env, service, severity, title, link = extract_fields(payload, default_env)
+        env, service, severity, title, link, resource, datapoint = extract_fields(payload, default_env)
+        links = resolve_links(env, title)
         mention = mention_for(severity)
         text = (
             f"{mention}[{env}] [{service}] [{severity}] {title}\n"
-            f"link: {link if link else '-'}"
+            f"resource: {resource}\n"
+            f"datapoint: {datapoint}\n"
+            f"event: {link if link else '-'}\n"
+            f"runbook: {links['runbook_url']}\n"
+            f"dashboard: {links['grafana_url']}\n"
+            f"logs: {links['cloudwatch_logs_insights_url']}"
         )
         post_to_slack(webhook_url, text)
 
     return {"ok": True, "records": len(records)}
-
