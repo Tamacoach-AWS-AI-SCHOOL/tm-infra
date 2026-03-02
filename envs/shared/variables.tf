@@ -398,6 +398,12 @@ variable "front_waf_rate_limit" {
   default     = 2000
 }
 
+variable "front_waf_loadtest_allowlist_cidrs" {
+  type        = list(string)
+  description = "Temporary IP allowlist CIDRs for load testing (CLOUDFRONT WAF). Keep empty by default."
+  default     = []
+}
+
 variable "cognito_manage_prod_existing" {
   type        = bool
   description = "Manage existing prod Cognito resources via Terraform (import required before apply)."

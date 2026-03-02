@@ -1,3 +1,19 @@
+resource "aws_wafv2_ip_set" "tamacoach_shared_front_loadtest_allowlist" {
+  provider = aws.us_east_1
+  count    = var.enable_front_waf && length(var.front_waf_loadtest_allowlist_cidrs) > 0 ? 1 : 0
+
+  name               = "${local.name_prefix}-front-loadtest-allowlist"
+  description        = "Temporary allowlist for controlled load testing traffic."
+  scope              = "CLOUDFRONT"
+  ip_address_version = "IPV4"
+  addresses          = var.front_waf_loadtest_allowlist_cidrs
+
+  tags = merge(local.common_tags, {
+    Name    = "${local.name_prefix}-front-loadtest-allowlist"
+    Service = "front"
+  })
+}
+
 resource "aws_wafv2_web_acl" "tamacoach_shared_front" {
   provider = aws.us_east_1
   count    = var.enable_front_waf ? 1 : 0
@@ -8,6 +24,30 @@ resource "aws_wafv2_web_acl" "tamacoach_shared_front" {
 
   default_action {
     allow {}
+  }
+
+  dynamic "rule" {
+    for_each = length(var.front_waf_loadtest_allowlist_cidrs) > 0 ? [1] : []
+    content {
+      name     = "AllowLoadTestIps"
+      priority = 1
+
+      action {
+        allow {}
+      }
+
+      statement {
+        ip_set_reference_statement {
+          arn = aws_wafv2_ip_set.tamacoach_shared_front_loadtest_allowlist[0].arn
+        }
+      }
+
+      visibility_config {
+        cloudwatch_metrics_enabled = true
+        metric_name                = "${local.name_prefix}-front-waf-loadtest-allow"
+        sampled_requests_enabled   = true
+      }
+    }
   }
 
   rule {
