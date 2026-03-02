@@ -21,6 +21,7 @@ DEDUPE_TABLE_NAME = os.environ["DEDUPE_TABLE_NAME"]
 LOW_AGG_TABLE_NAME = os.environ["LOW_AGG_TABLE_NAME"]
 DEDUPE_WINDOW_SECONDS = int(os.environ.get("DEDUPE_WINDOW_SECONDS", "1800"))
 JIRA_ISSUE_TYPE = os.environ.get("JIRA_ISSUE_TYPE", "작업")
+MEDIUM_JIRA_ENABLED = os.environ.get("MEDIUM_JIRA_ENABLED", "false").lower() == "true"
 
 
 def get_secure_param(name):
@@ -79,6 +80,8 @@ def extract_event(event):
         resource = ((finding.get("Resources", [{}]) or [{}])[0]).get("Id", "unknown")
         service = "securityhub"
         raw_link = finding.get("ProductArn", "")
+        workflow_status = ((finding.get("Workflow", {}) or {}).get("Status", "") or "").upper()
+        record_state = (finding.get("RecordState", "") or "").upper()
     elif source == "aws.guardduty":
         severity = map_guardduty_severity(detail)
         finding_id = detail.get("id", "unknown")
@@ -86,6 +89,8 @@ def extract_event(event):
         resource = (detail.get("resource", {}) or {}).get("resourceType", "unknown")
         service = "guardduty"
         raw_link = finding_id
+        workflow_status = ""
+        record_state = ""
     else:
         severity = "LOW"
         finding_id = "unknown"
@@ -93,6 +98,8 @@ def extract_event(event):
         resource = "unknown"
         service = source
         raw_link = ""
+        workflow_status = ""
+        record_state = ""
 
     return {
         "source": source,
@@ -102,6 +109,8 @@ def extract_event(event):
         "title": title,
         "resource": resource,
         "link": raw_link,
+        "workflow_status": workflow_status,
+        "record_state": record_state,
     }
 
 
@@ -187,9 +196,9 @@ def create_jira_issue(jira, event_data):
             raise RuntimeError(f"jira create failed: {resp.status} {body}")
 
 
-def aggregate_low_finding(table, event_data):
+def aggregate_finding(table, event_data, severity):
     day_key = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    agg_key = f"{day_key}|{event_data['service']}|LOW"
+    agg_key = f"{day_key}|{event_data['service']}|{severity}"
     table.update_item(
         Key={"aggregate_key": agg_key},
         UpdateExpression="ADD finding_count :inc SET updated_at = :ts",
@@ -203,22 +212,35 @@ def aggregate_low_finding(table, event_data):
 def handler(event, context):
     event_data = extract_event(event)
     severity = event_data["severity"]
-    publish_security_message(event_data)
-
     dedupe_table = dynamodb.Table(DEDUPE_TABLE_NAME)
+    low_table = dynamodb.Table(LOW_AGG_TABLE_NAME)
+
+    # SecurityHub noise control: process only active/new findings.
+    if event_data["source"] == "aws.securityhub":
+        if event_data["record_state"] and event_data["record_state"] != "ACTIVE":
+            return {"ok": True, "route": "ignored_record_state"}
+        if event_data["workflow_status"] and event_data["workflow_status"] != "NEW":
+            return {"ok": True, "route": "ignored_workflow_status"}
 
     if severity in {"HIGH", "CRITICAL"}:
-        # Slack + pager path through existing prod security notifier.
+        key = f"security|{event_data['source']}|{event_data['finding_id']}|{severity}"
+        if dedupe_check_and_mark(dedupe_table, key):
+            return {"ok": True, "route": "high_critical_deduped"}
+        publish_security_message(event_data)
         return {"ok": True, "route": "high_critical"}
 
     if severity == "MEDIUM":
-        key = f"security|{event_data['source']}|{event_data['finding_id']}|MEDIUM"
+        # Default: aggregate medium findings to prevent Jira/Slack flood.
+        if not MEDIUM_JIRA_ENABLED:
+            aggregate_finding(low_table, event_data, "MEDIUM")
+            return {"ok": True, "route": "medium_aggregated"}
+        hour_bucket = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H")
+        key = f"security|{event_data['source']}|{event_data['service']}|{event_data['resource']}|MEDIUM|{hour_bucket}"
         if dedupe_check_and_mark(dedupe_table, key):
             return {"ok": True, "route": "medium_deduped"}
         jira = get_jira_config()
         create_jira_issue(jira, event_data)
         return {"ok": True, "route": "medium_ticket_created"}
 
-    low_table = dynamodb.Table(LOW_AGG_TABLE_NAME)
-    aggregate_low_finding(low_table, event_data)
+    aggregate_finding(low_table, event_data, "LOW")
     return {"ok": True, "route": "low_aggregated"}

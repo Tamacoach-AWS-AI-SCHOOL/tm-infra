@@ -546,6 +546,7 @@ resource "aws_lambda_function" "observability_security_router" {
       LOW_AGG_TABLE_NAME     = aws_dynamodb_table.observability_security_low_agg.name
       DEDUPE_WINDOW_SECONDS  = "1800"
       JIRA_ISSUE_TYPE        = "작업"
+      MEDIUM_JIRA_ENABLED    = "true"
     }
   }
 
