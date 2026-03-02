@@ -232,6 +232,8 @@ data "aws_iam_policy_document" "plan_permissions" {
       "sns:ListSubscriptionsByTopic",
       "sns:ListTagsForResource",
       "sns:ListTopics",
+      "dynamodb:DescribeTable",
+      "dynamodb:ListTagsOfResource",
       "events:DescribeRule",
       "events:ListRules",
       "events:ListTargetsByRule",
