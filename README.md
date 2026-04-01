@@ -1,3 +1,9 @@
+# Infra Architecture
+<img width="1895" height="2098" alt="다마코치_전체_인프라_아키텍처 drawio (3)" src="https://github.com/user-attachments/assets/0d1fa7fc-84aa-42b9-a8b9-be9ec31c97e1" />
+
+# System Architecture
+<img width="1302" height="1511" alt="다마코치_시스템_아키텍처의 복사본 drawio (2)" src="https://github.com/user-attachments/assets/61ed27e5-142c-4466-a10e-26fe568a8e4a" />
+
 # Infra Repo Conventions (Structure / State / Governance)
 
 ## 1) 기본 원칙
