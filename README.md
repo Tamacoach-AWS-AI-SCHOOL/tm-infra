@@ -82,13 +82,35 @@ EKS는 **Private Endpoint** 전용 구성입니다. 클러스터에 직접 접�
 **로그**: Fluent Bit DaemonSet + EKS Control Plane Logs → CloudWatch
 **알람 라우팅**: CloudWatch/AMP → SNS → Lambda Notifier → Slack 채널별 분리
 
-| Slack 채널 | 수신 알람 |
-|------------|----------|
-| `#deployments` | ArgoCD 배포 성공/실패 |
-| `#security-prod` | GuardDuty 위협 탐지 |
-| `#gitlab-webhook` | GitLab MR/CI 이벤트 |
+| Slack 채널 | 용도 |
+|------------|------|
+| `#alerts-dev` | dev CloudWatch 알람 (API GW 지연, SQS DLQ) |
+| `#alerts-prod` | prod CloudWatch 알람 (@here critical 멘션) |
+| `#deployments` | ArgoCD 배포 성공/실패 알림 |
+| `#gitlab-webhook` | MR 생성·머지·파이프라인 결과 알림 |
+| `#security-prod` | GuardDuty·SecurityHub prod 보안 이벤트 |
 
-**주요 감시 항목**: KubeNodeNotReady / PodRestartsHigh / Node CPU >90% / API Server 5xx / DLQ 메시지 적체 / RDS CPU·스토리지
+<details>
+<summary>슬랙 캡처</summary>
+<div markdown="1">
+  
+  ### `#security-prod`
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 19 39" src="https://github.com/user-attachments/assets/6b3969cb-1062-4b60-b439-6e8571f0537e" />
+
+  ### `#alerts-dev`
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 20 57" src="https://github.com/user-attachments/assets/c1026a6e-5ec8-4271-8d9d-f2b1ad80f930" />
+
+  ### `#alerts-prod`
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 21 08" src="https://github.com/user-attachments/assets/68ae35f3-4972-4a0f-b132-a20feefc44f5" />
+
+  ### `#deployments`
+  <img width="674" height="362" alt="ScreenShot 2026-04-01 오후 9 22 04" src="https://github.com/user-attachments/assets/3a18199b-75b7-41a0-8835-75c441ebed5c" />
+
+  ### `#gitlab-webhook`
+  <img width="995" height="707" alt="ScreenShot 2026-04-01 오후 9 23 06" src="https://github.com/user-attachments/assets/2701571c-3635-4c38-bcd1-db23f1f16ef3" />
+
+</div>
+</details>
 
 ---
 
