@@ -1,3 +1,9 @@
+## ⚠️ 커밋 이력 안내
+
+이 레포지토리는 GitLab Self-Managed 인스턴스에서 마이그레이션된 것으로, 커밋 이력이 일부 다르게 표시될 수 있습니다.
+
+특히 **`administrator`** 계정으로 표시된 커밋은 실제로 **`sml-logs`** 가 작성한 것입니다. 기여 이력 확인 시 참고해 주세요.
+
 # Infra Architecture
 <img width="1895" height="2098" alt="다마코치_전체_인프라_아키텍처 drawio (3)" src="https://github.com/user-attachments/assets/0d1fa7fc-84aa-42b9-a8b9-be9ec31c97e1" />
 
