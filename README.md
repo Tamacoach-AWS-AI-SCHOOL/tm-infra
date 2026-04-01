@@ -57,6 +57,7 @@ Infrastructure repository for TamaCoach, an Agentic AI personal coaching service
 ---
 
 ## CI/CD — Terraform Apply Flow
+<img width="1096" height="568" alt="다마코치_CI_CD drawio (3)" src="https://github.com/user-attachments/assets/15274821-7294-4d94-a392-5eedffdbcf28" />
 
 GitLab Self-Managed (deployed inside VPC) + OIDC Keyless authentication.
 No long-lived AWS Access Keys — GitLab CI jobs obtain temporary credentials via OIDC token → AWS STS AssumeRoleWithWebIdentity.
@@ -257,6 +258,7 @@ Amazon Bedrock 기반 자기이해 및 행동 변화를 위한 Agentic AI 퍼스
 ---
 
 ## CI/CD — Terraform Apply 흐름
+<img width="1096" height="568" alt="다마코치_CI_CD drawio (3)" src="https://github.com/user-attachments/assets/3dfe28fb-8fd2-4c86-a8b9-2769cc8a84ef" />
 
 GitLab Self-Managed (VPC 내 구축) + OIDC Keyless 인증 사용.
 장기 Access Key 미사용 — GitLab CI Job이 OIDC Token을 발급받아 AWS STS로 임시 자격증명을 획득합니다.
