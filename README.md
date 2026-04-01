@@ -78,9 +78,11 @@ EKS는 **Private Endpoint** 전용 구성입니다. 클러스터에 직접 접�
 
 ## 모니터링 & 알람
 
-**메트릭**: ADOT Collector → AMP → AMG Grafana 대시보드
-**로그**: Fluent Bit DaemonSet + EKS Control Plane Logs → CloudWatch
-**알람 라우팅**: CloudWatch/AMP → SNS → Lambda Notifier → Slack 채널별 분리
+`**메트릭**`: ADOT Collector → AMP → AMG Grafana 대시보드
+
+`**로그**`: Fluent Bit DaemonSet + EKS Control Plane Logs → CloudWatch
+
+`**알람 라우팅**`: CloudWatch/AMP → SNS → Lambda Notifier → Slack 채널별 분리
 
 | Slack 채널 | 용도 |
 |------------|------|
