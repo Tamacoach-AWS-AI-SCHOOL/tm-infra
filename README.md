@@ -71,6 +71,15 @@ No long-lived AWS Access Keys — GitLab CI jobs obtain temporary credentials vi
 
 ---
 
+## CI/CD — Application Deployment Pipeline
+
+Full CI/CD architecture covering all app repositories (GitLab CI → SonarQube → ECR → manifest-repo → ArgoCD → EKS).
+For pipeline details of each repository, refer to the respective app repo README.
+
+<img width="1096" height="568" alt="다마코치_CI_CD drawio (3)" src="https://github.com/user-attachments/assets/52fe27ad-a9bc-4ac2-a655-c26ebf71eb42" />
+
+---
+
 ## Operational Access
 
 EKS is configured with **Private Endpoint only**. Direct cluster access is not available.
@@ -258,7 +267,6 @@ Amazon Bedrock 기반 자기이해 및 행동 변화를 위한 Agentic AI 퍼스
 ---
 
 ## CI/CD — Terraform Apply 흐름
-<img width="1096" height="568" alt="다마코치_CI_CD drawio (3)" src="https://github.com/user-attachments/assets/3dfe28fb-8fd2-4c86-a8b9-2769cc8a84ef" />
 
 GitLab Self-Managed (VPC 내 구축) + OIDC Keyless 인증 사용.
 장기 Access Key 미사용 — GitLab CI Job이 OIDC Token을 발급받아 AWS STS로 임시 자격증명을 획득합니다.
@@ -269,6 +277,15 @@ GitLab Self-Managed (VPC 내 구축) + OIDC Keyless 인증 사용.
 | main | prod | 자동 plan → **수동 승인 후** apply |
 
 **환경별 Role 분기**: shared / dev / prod 각각 별도 IAM Role로 최소 권한 적용
+
+---
+
+## CI/CD — 애플리케이션 배포 파이프라인
+
+전체 앱 레포의 CI/CD 아키텍처입니다 (GitLab CI → SonarQube → ECR → manifest-repo → ArgoCD → EKS).
+각 레포별 파이프라인 상세는 해당 앱 레포 README를 참고하세요.
+
+<img width="1096" height="568" alt="다마코치_CI_CD drawio (3)" src="https://github.com/user-attachments/assets/2b34bd47-aab2-4162-8732-961ffb28457f" />
 
 ---
 
