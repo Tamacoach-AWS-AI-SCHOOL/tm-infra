@@ -5,7 +5,7 @@ Terraform 코드 생성/수정 시 반드시 이 규칙을 따른다.
 
 ---
 
-# 0️⃣ 정책 범위
+# 0. 정책 범위
 
 이번 정책은 다음을 강제한다:
 
@@ -24,7 +24,7 @@ Terraform 코드 생성/수정 시 반드시 이 규칙을 따른다.
 
 ---
 
-# 1️⃣ 환경 정의
+# 1. 환경 정의
 
 Env는 아래 4개 중 하나만 사용:
 
@@ -44,7 +44,7 @@ main → prod
 
 ---
 
-# 2️⃣ Prefix 정책 (레거시 공존)
+# 2. Prefix 정책 (레거시 공존)
 
 * 신규 리소스는 반드시 `tamacoach` prefix 사용
 * 기존 `tm-*` 리소스는 이름 변경 금지
@@ -58,7 +58,7 @@ tm-dev-tamacoach-eks
 
 ---
 
-# 3️⃣ 네이밍 규칙
+# 3. 네이밍 규칙
 
 ## 3.1 dev/prod 리소스
 
@@ -102,7 +102,7 @@ tamacoach-shared-<resource>
 
 ---
 
-# 4️⃣ 네이밍 금지 규칙
+# 4. 네이밍 금지 규칙
 
 * dev/prod 리소스에 env 누락 금지
 * shared 리소스에 dev/prod env 포함 금지
@@ -129,7 +129,7 @@ replace
 
 ---
 
-# 5️⃣ 필수 태그 규칙
+# 5. 필수 태그 규칙
 
 모든 AWS 리소스(가능한 범위)에 반드시 적용:
 
@@ -164,7 +164,7 @@ locals {
 
 ---
 
-# 6️⃣ Project 값 강제 정책
+# 6. Project 값 강제 정책
 
 ## 현재 구현
 
@@ -188,7 +188,7 @@ validation {
 
 ---
 
-# 7️⃣ shared 레거시 네이밍 통제
+# 7. shared 레거시 네이밍 통제
 
 `envs/shared/variables.tf`
 
@@ -210,7 +210,7 @@ tamacoach
 
 ---
 
-# 8️⃣ SSM Parameter 경로 정책
+# 8. SSM Parameter 경로 정책
 
 형식:
 
@@ -256,7 +256,7 @@ tamacoach
 
 ---
 
-# 9️⃣ SSM Validation 구현 방식
+# 9. SSM Validation 구현 방식
 
 ## 9.1 variable validation
 
@@ -318,7 +318,7 @@ check "shared_ssm_prefix_policy"
 
 ---
 
-# 🔟 Validation 동작 시점
+# 10. Validation 동작 시점
 
 | 종류                  | 실행 시점             | 차단 수준     |
 | ------------------- | ----------------- | --------- |
@@ -327,7 +327,7 @@ check "shared_ssm_prefix_policy"
 
 ---
 
-# 1️⃣1️⃣ 팀원 작업 규칙
+# 11. 팀원 작업 규칙
 
 * SSM 새로 생성 시:
 
@@ -340,7 +340,7 @@ check "shared_ssm_prefix_policy"
 
 ---
 
-# 1️⃣2️⃣ 검증 명령
+# 12 .검증 명령
 
 ```
 terraform -chdir=envs/shared validate
@@ -372,18 +372,3 @@ dev/prod의 SSM 검증은 `ssm_parameter_names` 목록 기반이다.
 > SSM 리소스 추가 시 `ssm_parameter_names` 동시 수정은 필수.
 
 PR 체크리스트에 반드시 포함할 것.
-
----
-
-# 📌 코드 에이전트 한 줄 요약
-
-Terraform 생성 시:
-
-* project는 반드시 tamacoach
-* 신규 리소스는 tamacoach prefix
-* dev/prod는 `<domain>-<env>-tamacoach-<resource>`
-* shared는 `tamacoach-shared-*`
-* bootstrap은 기존 tm-* 유지
-* 모든 AWS 리소스는 default_tags 사용
-* SSM은 env별 허용 prefix만 사용
-* 기존 리소스 replace/destroy 시 무조건 중지
