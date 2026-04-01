@@ -69,7 +69,7 @@ No long-lived AWS Access Keys — GitLab CI jobs obtain temporary credentials vi
 
 **Per-environment Role separation**: separate IAM Roles for shared / dev / prod with least privilege
 
---
+---
 
 ## CI/CD — Application Deployment Pipeline
 
