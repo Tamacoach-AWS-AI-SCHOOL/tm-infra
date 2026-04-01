@@ -1,4 +1,208 @@
-> 커밋 이력 안내: 이 레포지토리는 GitLab Self-Managed 인스턴스에서 마이그레이션된 것으로, 커밋 이력이 일부 다르게 표시될 수 있습니다.
+<!-- ENG -->
+<details open>
+<summary><strong>English</strong></summary>
+
+> **Commit History Notice**: This repository was migrated from a GitLab Self-Managed instance. Commit history may appear inconsistent.
+> Commits attributed to **`administrator`** were actually authored by **`sml-logs`**. Please keep this in mind when reviewing contribution history.
+
+---
+
+# TamaCoach — Infra Repository
+
+Infrastructure repository for TamaCoach, an Agentic AI personal coaching service for self-understanding and behavioral change, powered by Amazon Bedrock.
+
+**Development Period**: 2026.01.28 ~ 2026.03.04
+
+> This repository manages all AWS infrastructure as code using Terraform.
+> For application deployment state, refer to [**tm-manifest**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-manifest). For service code, refer to each app repository below.
+
+---
+
+## Repository Structure
+
+| Repository | Role |
+|------------|------|
+| [**tm-infra**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-infra) (current) | Terraform IaC — full AWS infrastructure |
+| [**tm-manifest**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-manifest) | ArgoCD GitOps source — image digest (backend/worker) |
+| [**tm-helm**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-helm) | ArgoCD GitOps source — Helm chart templates |
+| [**tm-backend**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-backend) | Django backend |
+| [**tm-frontend**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-frontend) | Vue frontend |
+| [**tm-agent**](https://github.com/Tamacoach-AWS-AI-SCHOOL/tm-agent) | AI Multi-Agent (Strands Agents + LangChain) |
+
+---
+
+## Infrastructure Stack
+
+| Area | Service |
+|------|---------|
+| Container | AWS EKS (Private Endpoint, Multi-AZ, ap-northeast-2a/2c) |
+| Node Provisioning | Karpenter (fixed System nodes / dynamic App nodes) |
+| GitOps | ArgoCD (Dual-Source: tm-helm + tm-manifest) |
+| IaC | Terraform (4-layer state: bootstrap / shared / dev / prod) |
+| Network | VPC, Route53, CloudFront + WAF, API Gateway (HTTP API), Internal NLB |
+| Security | IRSA, ESO + Secrets Manager, GuardDuty, SecurityHub, Inspector, Macie |
+| Monitoring | ADOT → AMP, AMG (Grafana), Fluent Bit → CloudWatch |
+| Alerting | CloudWatch/AMP Rules → SNS → Lambda Notifier → Slack |
+| CI Auth | OIDC Keyless (STS AssumeRoleWithWebIdentity) |
+| Code Quality | SonarQube (deploy blocked if Quality Gate fails) |
+
+---
+
+# Infra Architecture
+<img width="1895" height="2098" alt="다마코치_전체_인프라_아키텍처 drawio (3)" src="https://github.com/user-attachments/assets/0d1fa7fc-84aa-42b9-a8b9-be9ec31c97e1" />
+
+# System Architecture
+<img width="1302" height="1511" alt="다마코치_시스템_아키텍처의 복사본 drawio (2)" src="https://github.com/user-attachments/assets/61ed27e5-142c-4466-a10e-26fe568a8e4a" />
+
+---
+
+## CI/CD — Terraform Apply Flow
+
+GitLab Self-Managed (deployed inside VPC) + OIDC Keyless authentication.
+No long-lived AWS Access Keys — GitLab CI jobs obtain temporary credentials via OIDC token → AWS STS AssumeRoleWithWebIdentity.
+
+| Branch | Environment | Apply Method |
+|--------|-------------|--------------|
+| develop | dev (stage) | auto plan → auto apply |
+| main | prod | auto plan → **manual approval required** |
+
+**Per-environment Role separation**: separate IAM Roles for shared / dev / prod with least privilege
+
+---
+
+## Operational Access
+
+EKS is configured with **Private Endpoint only**. Direct cluster access is not available.
+
+- **Access path**: Jump Host → SSM Session Manager
+- **Kubernetes write access**: granted only to ArgoCD Service Account (direct `kubectl apply` by humans is blocked)
+- **Terraform apply**: via GitLab CI (OIDC) or lead local environment (prod requires manual approval)
+
+---
+
+## Monitoring & Alerting
+
+**`Metrics`**: ADOT Collector → AMP → AMG Grafana dashboard
+
+**`Logs`**: Fluent Bit DaemonSet + EKS Control Plane Logs → CloudWatch
+
+**`Alert Routing`**: CloudWatch/AMP → SNS → Lambda Notifier → Slack (routed by channel)
+
+| Slack Channel | Purpose |
+|---------------|---------|
+| `#alerts-dev` | dev CloudWatch alerts (API GW latency, SQS DLQ) |
+| `#alerts-prod` | prod CloudWatch alerts (@here mention for critical) |
+| `#deployments` | ArgoCD deployment success/failure |
+| `#gitlab-webhook` | MR creation, merge, pipeline result notifications |
+| `#security-prod` | GuardDuty·SecurityHub prod security events |
+
+<details>
+<summary>Slack screenshots</summary>
+<div markdown="1">
+
+  ### `#security-prod`
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 19 39" src="https://github.com/user-attachments/assets/6b3969cb-1062-4b60-b439-6e8571f0537e" />
+
+  ### `#alerts-dev`
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 20 57" src="https://github.com/user-attachments/assets/c1026a6e-5ec8-4271-8d9d-f2b1ad80f930" />
+
+  ### `#alerts-prod`
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 21 08" src="https://github.com/user-attachments/assets/68ae35f3-4972-4a0f-b132-a20feefc44f5" />
+
+  ### `#deployments`
+  <img width="674" height="362" alt="ScreenShot 2026-04-01 오후 9 22 04" src="https://github.com/user-attachments/assets/3a18199b-75b7-41a0-8835-75c441ebed5c" />
+
+  ### `#gitlab-webhook`
+  <img width="995" height="707" alt="ScreenShot 2026-04-01 오후 9 23 06" src="https://github.com/user-attachments/assets/2701571c-3635-4c38-bcd1-db23f1f16ef3" />
+
+</div>
+</details>
+
+---
+
+# Infra Repo Conventions (Structure / State / Governance)
+
+## 1) Core Principles
+
+* **Repo of Truth**: Application deployment state is owned by manifest-repo. This repo manages infrastructure only.
+* **Branch-to-environment mapping**
+  * develop → dev (stage)
+  * main → prod
+* **Environment isolation**
+  * Terraform state is separated into: bootstrap / shared / dev / prod
+  * Shared resources live in `shared`; environment-specific resources live in `dev` or `prod`
+* Production promotion requires image digest pinning (deployment state is managed in manifest-repo)
+
+---
+
+## 2) Folder Structure
+
+```
+bootstrap/     : one-time stack for remote state (S3 + DynamoDB)
+modules/       : reusable Terraform modules
+envs/shared/   : shared infrastructure (VPC, NAT, VPCE, etc.)
+envs/dev/      : dev environment infrastructure (EKS, IRSA, Jump Host, etc.)
+envs/prod/     : prod environment infrastructure
+docs/          : conventions, outputs, and operational docs
+```
+
+---
+
+## 3) Environment Ownership
+
+| Stack     | Purpose                   | Who can change     |
+| --------- | ------------------------- | ------------------ |
+| bootstrap | remote state foundation   | Lead / DevOps only |
+| shared    | network / shared resources | DevOps            |
+| dev       | development environment   | Entire team        |
+| prod      | production environment    | After approval     |
+
+---
+
+## 4) State / Apply Rules
+
+* `bootstrap/` is applied once with local state only.
+* All other stacks use S3 backend + DynamoDB lock.
+* Apply order:
+  1. bootstrap
+  2. envs/shared
+  3. envs/dev or envs/prod
+* prod apply requires manual approval (manual gate).
+* bootstrap resources (S3 tfstate bucket, DynamoDB lock table) must never be renamed.
+
+---
+
+## 5) Secrets Handling
+
+* Never commit secret values in tfvars files.
+* Sensitive values must use SSM Parameter Store (SecureString) or Secrets Manager.
+* Non-sensitive values (ARNs, IDs, etc.) may use SSM String.
+
+---
+
+## 6) Code Style
+
+* All code must pass `terraform fmt`.
+* Terraform and provider versions must be pinned.
+* `.terraform.lock.hcl` must be committed for reproducibility.
+* No manual console changes — all changes must go through Terraform.
+
+---
+
+## 7) Naming / Tagging Policy
+
+Detailed naming and tagging rules are defined in
+→ [`docs/naming-tagging.md`](docs/naming-tagging.md)
+
+</details>
+
+---
+
+<!-- KOR -->
+<details>
+<summary><strong>한국어</strong></summary>
+
+> **커밋 이력 안내**: 이 레포지토리는 GitLab Self-Managed 인스턴스에서 마이그레이션된 것으로, 커밋 이력이 일부 다르게 표시될 수 있습니다.
 > 특히 **`administrator`** 계정으로 표시된 커밋은 실제로 **`sml-logs`** 가 작성한 것입니다. 기여 이력 확인 시 참고해 주세요.
 
 ---
@@ -95,21 +299,21 @@ EKS는 **Private Endpoint** 전용 구성입니다. 클러스터에 직접 접�
 <details>
 <summary>슬랙 캡처</summary>
 <div markdown="1">
-  
+
   ### `#security-prod`
-  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 19 39" src="https://github.com/user-attachments/assets/6b3969cb-1062-4b60-b439-6e8571f0537e" />
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 19 39" src="https://github.com/user-attachments/assets/6b3969cb-1062-4b60-b439-6e8571f0537e" />
 
   ### `#alerts-dev`
-  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 20 57" src="https://github.com/user-attachments/assets/c1026a6e-5ec8-4271-8d9d-f2b1ad80f930" />
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 20 57" src="https://github.com/user-attachments/assets/c1026a6e-5ec8-4271-8d9d-f2b1ad80f930" />
 
   ### `#alerts-prod`
-  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 21 08" src="https://github.com/user-attachments/assets/68ae35f3-4972-4a0f-b132-a20feefc44f5" />
+  <img width="994" height="713" alt="ScreenShot 2026-04-01 오후 9 21 08" src="https://github.com/user-attachments/assets/68ae35f3-4972-4a0f-b132-a20feefc44f5" />
 
   ### `#deployments`
-  <img width="674" height="362" alt="ScreenShot 2026-04-01 오후 9 22 04" src="https://github.com/user-attachments/assets/3a18199b-75b7-41a0-8835-75c441ebed5c" />
+  <img width="674" height="362" alt="ScreenShot 2026-04-01 오후 9 22 04" src="https://github.com/user-attachments/assets/3a18199b-75b7-41a0-8835-75c441ebed5c" />
 
   ### `#gitlab-webhook`
-  <img width="995" height="707" alt="ScreenShot 2026-04-01 오후 9 23 06" src="https://github.com/user-attachments/assets/2701571c-3635-4c38-bcd1-db23f1f16ef3" />
+  <img width="995" height="707" alt="ScreenShot 2026-04-01 오후 9 23 06" src="https://github.com/user-attachments/assets/2701571c-3635-4c38-bcd1-db23f1f16ef3" />
 
 </div>
 </details>
@@ -189,3 +393,5 @@ docs/          : 규칙/출력/운영 문서
 
 Naming 및 Tagging의 상세 규칙은
 → [`docs/naming-tagging.md`](docs/naming-tagging.md) 문서를 따른다.
+
+</details>
